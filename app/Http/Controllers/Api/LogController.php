@@ -33,8 +33,45 @@ class LogController extends Controller
                 'restored' => 'Restaurado',
                 'saved'    => 'Guardado',
             ];
-            $data = $logs->map(function ($log) use ($traducciones) {
 
+            // 🔧 Filtrar registros duplicados
+            $uniqueLogs = $logs->unique(function ($log) use ($traducciones) {
+                // Crear una clave única basada en contenido, no en ID
+                $old = $this->safeJsonDecode($log->old_values);
+                $new = $this->safeJsonDecode($log->new_values);
+
+                // Eliminar password si existe
+                if (is_array($old)) unset($old['password']);
+                if (is_array($new)) unset($new['password']);
+
+                // Ajustar acción según el método HTTP
+                $accion = $traducciones[$log->action] ?? ucfirst($log->action);
+                switch (strtoupper($log->http_method)) {
+                    case 'POST':
+                        $accion = 'Creado';
+                        break;
+                    case 'PUT':
+                    case 'PATCH':
+                        $accion = 'Actualizado';
+                        break;
+                    case 'DELETE':
+                        $accion = 'Desactivado';
+                        break;
+                }
+
+                // Crear clave única basada en contenido
+                return md5(
+                    $log->user_id .
+                        $log->loggable_type .
+                        $accion .
+                        json_encode($old) .
+                        json_encode($new) .
+                        $log->ip_address .
+                        $log->created_at->format('Y-m-d H:i') // Agrupar por minuto
+                );
+            });
+
+            $data = $uniqueLogs->map(function ($log) use ($traducciones) {
                 // Acción base (del observer)
                 $accion = $traducciones[$log->action] ?? ucfirst($log->action);
 
@@ -65,17 +102,18 @@ class LogController extends Controller
                     'usuario' => $log->user?->fullName ?? 'Sistema',
                     'modelo' => class_basename($log->loggable_type),
                     'accion' => $accion,
-                    'valores_anteriores' => $old, // <-- usar $old filtrado
-                    'valores_nuevos' => $new,     // <-- usar $new filtrado
+                    'valores_anteriores' => $old,
+                    'valores_nuevos' => $new,
                     'ip' => $log->ip_address,
                     'metodo_http' => $log->http_method,
                     'fecha' => $log->created_at->format('Y-m-d H:i:s'),
                 ];
             });
+
             return response()->json([
                 'success' => true,
                 'message' => 'Historial de acciones obtenido correctamente',
-                'data' => $data,
+                'data' => $data->values(), // Reindexar array
             ]);
         } catch (\Throwable $e) {
             return response()->json([

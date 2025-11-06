@@ -28,9 +28,6 @@ class AppServiceProvider extends ServiceProvider
         User::observe(GenericObserver::class);
         Penalty::observe(GenericObserver::class);
 
-        // Penalty::observe(PenaltyObserver::class);
-
-        // Si quieres agregar más:
-        // YourOtherModel::observe(GenericObserver::class);
+       
     }
 }
