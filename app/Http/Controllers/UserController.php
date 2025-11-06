@@ -161,9 +161,9 @@ $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
                 ->get()
                 ->map(function ($user) {
                     $userArray = $user->toArray();
-                    // Convertir los IDs de permisos de string a array
+                    // Convertir los IDs de permisos de string a array de números
                     $userArray['permissions'] = $user->permission_ids
-                        ? explode(',', $user->permission_ids)
+                        ? array_map('intval', explode(',', $user->permission_ids))
                         : [];
                     return $userArray;
                 });
