@@ -12,13 +12,13 @@ use App\Http\Controllers\PenaltyController;
 // Rutas públicas
 Route::post('/users/login', [UserController::class, 'login']);
 Route::post('/users/register', [UserController::class, 'register']);
-Route::get('/logs', [LogController::class, 'index']);
 Route::get('/hola', function () {
     return response()->json(['message' => '¡Hola!']);
 });
 
 // Rutas protegidas por Sanctum
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/logs', [LogController::class, 'index']);
 
     // Usuarios
     Route::prefix('/users')->group(function () {
@@ -35,11 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Procedimientos
-    Route::prefix('/procedure')->group(function () {
-        Route::get('/index', [ProcedureController::class, 'index']);
-        Route::post('/createorUpdate', [ProcedureController::class, 'createorUpdate']);
-        Route::delete('/delete', [ProcedureController::class, 'destroy']);
-    });
+  
 
     // Permisos
     Route::prefix('/permissions')->group(function () {

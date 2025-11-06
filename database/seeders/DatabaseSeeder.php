@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             'multas_eliminar',
             'multas_ver',
             'multas_exportar',
-
+            'multas_historial'
         ];
 
         // 🔹 Insertar permisos

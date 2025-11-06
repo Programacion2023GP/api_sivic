@@ -26,7 +26,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         User::observe(GenericObserver::class);
-        Penalty::observe(PenaltyObserver::class);
+        Penalty::observe(GenericObserver::class);
+
+        // Penalty::observe(PenaltyObserver::class);
 
         // Si quieres agregar más:
         // YourOtherModel::observe(GenericObserver::class);
