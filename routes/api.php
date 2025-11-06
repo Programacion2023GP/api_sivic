@@ -49,7 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Técnicos
 
     Route::prefix('penalties')->group(function () {
-        Route::get('/index', [PenaltyController::class, 'index']);
+        Route::post('/index', [PenaltyController::class, 'index']);
+        Route::get('/historial', [PenaltyController::class, 'historial']);
+
         Route::post('/createorUpdate', [PenaltyController::class, 'storeOrUpdate']); // ← crea o actualiza
         Route::delete('/delete', [PenaltyController::class, 'toggleActive']);
     });

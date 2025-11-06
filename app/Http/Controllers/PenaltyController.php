@@ -32,23 +32,23 @@ class PenaltyController extends Controller
             'data' => $penalties
         ]);
     }
-    public function historial($curp)
+    public function historial(Request $request)
     {
         // Obtener el ID más alto del CURP (registro más reciente)
         $latestId = Penalty::where('active', true)
-            ->where('curp', $curp)
+            ->where('curp', $request->curp)
             ->max('id');
 
         // Obtener todos los registros de ese CURP excluyendo el más reciente
         $history = Penalty::where('active', true)
-            ->where('curp', $curp)
+            ->where('curp', $request->curp)
             ->where('id', '<>', $latestId)
             ->orderBy('id', 'desc') // opcional: ordenar del más reciente al más antiguo
             ->get();
 
         return response()->json([
             'success' => true,
-            'curp' => $curp,
+            'curp' => $request->curp,
             'history' => $history
         ]);
     }
