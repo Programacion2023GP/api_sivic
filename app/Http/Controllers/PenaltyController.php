@@ -47,6 +47,7 @@ class PenaltyController extends Controller
             ->get();
 
         return response()->json([
+            'status' => 'success',
             'success' => true,
             'curp' => $request->curp,
             'history' => $history
