@@ -25,7 +25,9 @@ class TechnicalController extends Controller
             'street' => 'required|string|max:255',
             'number' => 'required|integer',
             'city' => 'nullable|integer',
-            'section' => 'required|string|max:50',
+            'payroll' => 'required|integer',
+
+                'section' => 'required|string|max:50',
             'postalCode' => 'required|integer',
             'municipality' => 'required|string|max:255',
             'locality' => 'required|string|max:255',
@@ -47,7 +49,9 @@ class TechnicalController extends Controller
 
         // Asignar campos desde la request
         $technical->procedureId = $validated['procedureId'];
-        $technical->dependeceAssignedId = $validated['dependeceAssignedId'];
+            $technical->procedureId = $validated['payroll'];
+
+            $technical->dependeceAssignedId = $validated['dependeceAssignedId'];
         $technical->userId = Auth::id(); // Más eficiente que Auth::user()->id
 
         // Datos personales

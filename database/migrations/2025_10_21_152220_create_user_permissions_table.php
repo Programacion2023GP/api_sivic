@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_permissions', function (Blueprint $table) {
-             $table->id();
-            $table->unsignedBigInteger('id_user'); // id del usuario
-            $table->unsignedBigInteger('id_permission'); // id del permiso
-            $table->boolean('active')->default(true);
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('permission_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

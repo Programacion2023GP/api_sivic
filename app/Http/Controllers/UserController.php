@@ -26,24 +26,21 @@ class UserController extends Controller
                 'firstName' => 'required|string|max:255',
                 'paternalSurname' => 'required|string|max:255',
                 'maternalSurname' => 'required|string|max:255',
-                'email' => [
-                    'required',
-                    'string',
-                    'email',
-                    'max:255',
-                ],
             ];
 
-            // Si es creación, el email debe ser único
+            // Reglas para payroll
+            $payrollRules = ['required', 'integer'];
             if (!$isUpdate) {
-                $rules['email'][] = 'unique:users,email';
+                $payrollRules[] = 'unique:users,payroll';
             } else {
-                // En actualización, el email debe ser único excepto para el mismo usuario
-                $rules['email'][] = 'unique:users,email,' . $request->id;
+                $payrollRules[] = 'unique:users,payroll,' . $request->id;
             }
 
+            $rules['payroll'] = $payrollRules;
+
+
             $messages = [
-                'email.unique' => 'El correo electrónico ya está registrado',
+                'payroll.unique' => 'El empleado ya está registrado',
             ];
 
             $validator = Validator::make($request->all(), $rules, $messages);
@@ -67,7 +64,7 @@ class UserController extends Controller
                 //     . substr($paternal, 0, 1)    // 1ra letra apellido paterno
                 //     . substr($maternal, 0, 1)    // 1ra letra apellido materno
                 //     . substr(bin2hex(random_bytes(1)), 0, 2); // 2 caracteres aleatorios
-                $rawPassword = "123456";
+                $rawPassword = $request->payroll;
                 $user->password = Hash::make($rawPassword);
             }
 
@@ -77,7 +74,8 @@ class UserController extends Controller
             $user->firstName = $request->firstName;
             $user->paternalSurname = $request->paternalSurname;
             $user->maternalSurname = $request->maternalSurname;
-            $user->email = $request->email;
+            $user->payroll = $request->payroll;
+
             $user->active = 1;
 
             $user->save();
@@ -117,18 +115,18 @@ class UserController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email',
+            'payroll' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('payroll', $request->payroll)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return ApiResponse::error('Credenciales incorrectas', 401);
         }
         $permisos = DB::table('user_permissions')
-            ->join('permissions', 'permissions.id', '=', 'user_permissions.id_permission')
-            ->where('user_permissions.id_user', $user->id)
+            ->join('permissions', 'permissions.id', '=', 'user_permissions.permission_id')
+            ->where('user_permissions.user_id', $user->id)
             ->pluck('permissions.name');        // Crear token
 $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
 
@@ -152,7 +150,7 @@ $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
     public function index()
     {
         try {
-            $users = User::where("active", 1)->get();
+            $users = User::where('payroll', '!=', '000000')->get();
             return ApiResponse::success(
                 $users,
                 'Lista de usuarios'
@@ -175,7 +173,7 @@ $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
 
             $technical->update(['active' => false]);
 
-            return ApiResponse::success(null, 'Usuario eliminado correctamente');
+            return ApiResponse::success(null, 'Usuario desactivado correctamente');
         } catch (Exception $e) {
             return ApiResponse::error('Error al eliminar el usuario', 500);
         }

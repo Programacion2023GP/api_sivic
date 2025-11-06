@@ -13,126 +13,68 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Insertar permisos
-        DB::table('permissions')->insert([
-            ['name' => 'Catalogos', 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Usuarios', 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'CapturistaFichas', 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'AdministrarFichas', 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Reportes', 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // 🔹 Truncar tabla de permisos
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('permissions')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 2. Insertar usuario administrador
-        DB::table('users')->insert([
-            [
-                'firstName' => 'Admin',
-                'paternalSurname' => "Admin",
-                'maternalSurname' => "Admin",
-                'email' => "admin@gomezpalacio.gob.mx",
-                "password" => Hash::make("desarrollo"),
+        // 🔹 Permisos en español
+        $permissions = [
+            'usuarios_crear',
+            'usuarios_actualizar',
+            'usuarios_eliminar',
+            'usuarios_ver',
+            'usuarios_exportar',
+            'vista_logs',
+            'multas_crear',
+            'multas_actualizar',
+            'multas_eliminar',
+            'multas_ver',
+            'multas_exportar',
+
+        ];
+
+        // 🔹 Insertar permisos
+        foreach ($permissions as $permission) {
+            DB::table('permissions')->insert([
+                'name' => $permission,
                 'active' => true,
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->command->info('Permisos creados en español y tabla reiniciada.');
+
+        // 🔹 Crear usuario nómina 000000
+        DB::table('users')->updateOrInsert(
+            ['payroll' => '000000'], // si existe, actualiza
+            [
+                'firstName' => 'Admin',
+                'paternalSurname' => 'Desarrollo',
+                'maternalSurname' => '',
+                'password' => Hash::make('desarrollo'),
+                'active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]
-        ]);
-            DB::table('dependence')->insert([
-            [
-                'name' => 'PRESIDENCIA',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'DIF',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'EXPOFERIA',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'SIDEAPA',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'SIDEAPAR',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
+        );
 
-        ]);
-        // 3. Asignar permisos al usuario (tabla pivot permission_user)
-        DB::table('user_permissions')->insert([
-            ['id_user' => 1, 'id_permission' => 1, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id_user' => 1, 'id_permission' => 2, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            // ['id_user' => 1, 'id_permission' => 3, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id_user' => 1, 'id_permission' => 4, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['id_user' => 1, 'id_permission' => 5, 'active' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
-        DB::table('procedure')->insert([
-            [
-                'name' => 'LOGICO',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'NATURAL',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-            [
-                'name' => 'ARTIFICIAL',
-                'active' => 1,
-                'created_at' => now(),
-                'updated_at' => now()
-            ],
-        
+        $userId = DB::table('users')->where('payroll', '000000')->value('id');
 
-        ]);
-        $localities = [
-    "aeropuerto","Ampliación","barrio","Campamento","colonia","condominio","Congregación",
-    "Conjunto habitacional","ejido","equipamiento","Estación","Exhacienda","finca","fraccionamiento",
-    "Gran usuario","granja","hacienda","localidad","paraje","Parque industrial","Poblado comunal",
-    "pueblo","Puerto","rancheria","rancho","Residencial","unidad habitacional","Villa",
-    "Zona comercial","zona federal","zona industrial","Zona militar","Zona naval"
-];
+        // 🔹 Asignar todos los permisos a este usuario
+        $permissionIds = DB::table('permissions')->pluck('id');
 
-$dependenceIds = [1,2,3,4,5]; // IDs de tu tabla dependence
-$procedureIds = [1,2,3]; // IDs de tu tabla procedure
+        foreach ($permissionIds as $permissionId) {
+            DB::table('user_permissions')->updateOrInsert(
+                [
+                    'user_id' => $userId,
+                    'permission_id' => $permissionId,
+                ],
+                ['created_at' => now(), 'updated_at' => now()]
+            );
+        }
 
-for ($i = 1; $i <= 30; $i++) {
-    DB::table('techinical')->insert([
-        'procedureId' => $procedureIds[array_rand($procedureIds)],
-        'dependeceAssignedId' => $dependenceIds[array_rand($dependenceIds)],
-        'userId' => 1, // administrador
-        'firstName' => "Nombre$i",
-        'paternalSurname' => "ApellidoP$i",
-        'maternalSurname' => "ApellidoM$i",
-        'street' => "Calle $i",
-        'number' => rand(1, 500),
-        'city' => rand(1, 100), // puedes reemplazarlo con IDs de ciudades reales
-        'section' => "Seccion $i",
-        'postalCode' => 35000,
-        'municipality' => "Municipio $i",
-        'locality' => $localities[array_rand($localities)],
-        'reference' => "Referencia $i",
-        'cellphone' => "5550000".str_pad($i, 3, "0", STR_PAD_LEFT),
-        'requestDescription' => "Descripción de solicitud $i",
-        'solutionDescription' => "Descripción de solución $i",
-        'active' => true,
-        'created_at' => now(),
-        'updated_at' => now()
-    ]);
-}
-
+        $this->command->info('Todos los permisos asignados al usuario nómina 000000.');
     }
 }

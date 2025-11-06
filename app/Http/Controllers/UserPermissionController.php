@@ -40,13 +40,15 @@ class UserPermissionController extends Controller
 
         try {
             // Elimina permisos antiguos
-            UserPermission::where('id_user', $userId)->delete();
+            if (UserPermission::where('user_id', $userId)->exists()) {
+                UserPermission::where('user_id', $userId)->delete();
+            }
 
             // Inserta nuevos
             $data = collect($permissions)->map(function ($permissionId) use ($userId) {
                 return [
-                    'id_user' => $userId,
-                    'id_permission' => $permissionId,
+                    'user_id' => $userId,
+                    'permission_id' => $permissionId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

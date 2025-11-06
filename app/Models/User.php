@@ -22,7 +22,7 @@ class User extends Authenticatable
         'firstName',
         'paternalSurname',
         'maternalSurname',
-        'email',
+        'payroll',
         'password',
         'active',
     ];

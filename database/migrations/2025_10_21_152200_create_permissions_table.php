@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('permissions', function (Blueprint $table) {
-               $table->id();
-            $table->string('name'); // Ejemplo: 'catalogos', 'usuarios', 'fichastecnicas'
+            $table->id();
+            $table->string('name')->unique();
             $table->boolean('active')->default(true);
             $table->timestamps();
         });

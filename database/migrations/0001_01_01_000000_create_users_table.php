@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('paternalSurname');
             $table->string('maternalSurname')->nullable();
             $table->string('fullName')->storedAs('CONCAT(firstName, " ",paternalSurname, " ", maternalSurname)');
+            $table->string('payroll')->unique();
 
-            $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->boolean('active');
