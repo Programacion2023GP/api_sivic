@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('maternalSurname')->nullable();
             $table->string('fullName')->storedAs('CONCAT(firstName, " ",paternalSurname, " ", maternalSurname)');
             $table->string('payroll')->unique();
+            $table->foreignId('dependence_id')->nullable()->constrained()->onDelete('cascade');
 
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

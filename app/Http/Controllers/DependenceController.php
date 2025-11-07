@@ -26,6 +26,7 @@ class DependenceController extends Controller
 
             $dependence->name = $request->name;
             $dependence->active = $request->active;
+            $dependence->color = $request->color;
 
             $dependence->save();
 

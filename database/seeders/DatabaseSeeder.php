@@ -31,7 +31,12 @@ class DatabaseSeeder extends Seeder
             'multas_eliminar',
             'multas_ver',
             'multas_exportar',
-            'multas_historial'
+            'multas_historial',
+            'catalogo_dependencia_ver',
+            'catalogo_dependencia_crear',
+            'catalogo_dependencia_actualizar',
+            'catalogo_dependencia_eliminar',
+            'catalogo_dependencia_exportar',
         ];
 
         // 🔹 Insertar permisos
