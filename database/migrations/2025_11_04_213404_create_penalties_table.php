@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('command_troops')->nullable();
             $table->string('command_details')->nullable();
             $table->string('filter_supervisor')->nullable();
+            $table->string('detainee_released_to')->nullable();
 
             $table->string('name');
             $table->string('cp');

@@ -32,6 +32,7 @@ class Penalty extends Model
         'amountAlcohol',
         'number_of_passengers',
         'plate_number',
+        'detainee_released_to',
         'detainee_phone_number',
         'curp',
         'observations',
