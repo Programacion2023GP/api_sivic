@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('fullName')->storedAs('CONCAT(firstName, " ",paternalSurname, " ", maternalSurname)');
             $table->string('payroll')->unique();
             $table->foreignId('dependence_id')->nullable()->constrained('dependences')->onDelete('cascade');
+            $table->enum('role', ['sistemas', 'administrativo', 'director', 'usuario'])->default('usuario');
 
 
             $table->timestamp('email_verified_at')->nullable();

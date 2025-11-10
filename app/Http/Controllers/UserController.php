@@ -71,6 +71,7 @@ class UserController extends Controller
 
             // Asignar datos comunes
             $user->dependence_id = $request->dependence_id;
+            $user->role = $request->role;
 
             $user->firstName = $request->firstName;
             $user->paternalSurname = $request->paternalSurname;

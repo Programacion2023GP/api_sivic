@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Penalty;
+use App\Models\PenaltyView;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,45 +14,54 @@ class PenaltyController extends Controller
     /**
      * Listar multas activas
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Subconsulta: IDs máximos por CURP
-        $latestIds = Penalty::where('active', true)
-            ->selectRaw('MAX(id) as id')
-            ->groupBy('curp');
+        $user = auth()->user();
+        $userRole = $user->role;
+        $userDependenceId = $user->dependence_id;
 
-        // Consulta principal con JOIN a users
-        $penalties = Penalty::join('users', 'penalties.created_by', '=', 'users.id')
-            ->whereIn('penalties.id', $latestIds)
-            ->where('penalties.active', 1)
-            ->select(
-                'penalties.*',
-                'users.fullName as created_by',
-                // Subconsulta para saber si tiene historial
-                DB::raw('(SELECT COUNT(*) FROM penalties p2 WHERE p2.curp = penalties.curp AND p2.active = 1) > 1 as has_history')
-            )
-            ->get();
+        $query = PenaltyView::query();
+
+        // Aplicar filtros según el rol
+        if ($userRole === 'director') {
+            $query->where('user_dependence_id', $userDependenceId);
+        } elseif ($userRole === 'usuario') {
+            $query->where('created_by', $user->id);
+        }
+        // Sistemas y administrativo no necesitan filtros
+
+        $penalties = $query->orderBy('id', 'desc')->get();
 
         return response()->json([
             'status' => 'success',
-
             'success' => true,
-            'data' => $penalties
+            'data' => $penalties,
+            'user_role' => $userRole
         ]);
     }
 
     public function historial(Request $request)
     {
-        // Obtener el ID más alto del CURP (registro más reciente)
-        $latestId = Penalty::where('active', true)
-            ->where('curp', $request->curp)
-            ->max('id');
+        $user = auth()->user();
+        $userRole = $user->role;
+        $userDependenceId = $user->dependence_id;
 
-        // Obtener todos los registros de ese CURP excluyendo el más reciente
-        $history = Penalty::where('active', true)
-            ->where('curp', $request->curp)
+        $query = Penalty::where('active', true)
+            ->where('curp', $request->curp);
+
+        // Aplicar filtros según el rol
+        if ($userRole === 'director') {
+            $query->where('dependence_id', $userDependenceId);
+        } elseif ($userRole === 'usuario') {
+            $query->where('created_by', $user->id);
+        }
+        // Sistemas y administrativo no necesitan filtros
+
+        $latestId = $query->max('id');
+
+        $history = $query->clone()
             ->where('id', '<>', $latestId)
-            ->orderBy('id', 'desc') // opcional: ordenar del más reciente al más antiguo
+            ->orderBy('id', 'desc')
             ->get();
 
         return response()->json([
