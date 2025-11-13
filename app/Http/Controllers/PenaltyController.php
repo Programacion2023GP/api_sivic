@@ -151,6 +151,7 @@ class PenaltyController extends Controller
                     unset($data['images_evidences']);
                 }
             }
+
             if ($request->hasFile('images_evidences_car') && $request->file('images_evidences_car')->isValid()) {
                 $firma = $request->file('images_evidences_car');
                 $dirPath = "presidencia/SIVIC/evidences";
