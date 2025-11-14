@@ -27,6 +27,8 @@ class Penalty extends Model
         'command_details',
         'filter_supervisor',
         'name',
+        'lat',
+        'lon',
         'cp',
         'city',
         'age',
