@@ -43,16 +43,16 @@ class PenaltyController extends Controller
     {
 
         $penalties = DB::select("
-    SELECT *
-    FROM penalties_latest_view p
-    WHERE p.alcohol_concentration >= 3
-      AND NOT EXISTS (
-          SELECT 1
-          FROM courts c
-          WHERE c.penalties_id = p.id
-      )
-    ORDER BY p.id DESC
-");
+            SELECT *
+            FROM penalties_latest_view p
+            WHERE p.alcohol_concentration >= 3
+            AND NOT EXISTS (
+                SELECT 1
+                FROM courts c
+                WHERE c.penalties_id = p.id
+            )
+            ORDER BY p.id DESC
+        ");
 
 
         return response()->json([
@@ -67,7 +67,7 @@ class PenaltyController extends Controller
         $userRole = $user->role;
         $userDependenceId = $user->dependence_id;
 
-        $query = Penalty::where('active', true)
+        $query = PenaltyView::where('active', true)
             ->where('curp', $request->curp);
 
         // Aplicar filtros según el rol
@@ -102,6 +102,7 @@ class PenaltyController extends Controller
         try {
             $data = $request->all();
 
+
             // Convert boolean strings to actual booleans/integers
             $data = $this->convertBooleanStrings($data);
 
@@ -113,6 +114,14 @@ class PenaltyController extends Controller
                     $data['date'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
                 }
             }
+
+
+            // REGISTRAR PENALTY PREALOAD DATA
+            $penaltyPreloadData = new PenaltyPreloadDataController();
+            $penaltyPreloadData = $penaltyPreloadData->storeOrUpdate($request);
+            $data["penalty_preload_data_id"] = $penaltyPreloadData["id"];
+
+
             if ($request->hasFile('image_penaltie') && $request->file('image_penaltie')->isValid()) {
                 $firma = $request->file('image_penaltie');
                 $dirPath = "presidencia/SIVIC/multas";
@@ -177,6 +186,7 @@ class PenaltyController extends Controller
                 unset($data['created_by']); // No actualizar created_by
 
                 $penalty = Penalty::findOrFail($data['id']);
+                // $penalty->penalty_preload_data= $penaltyPreloadData->id;
                 $penalty->update($data);
 
                 $message = 'Multa actualizada correctamente';
@@ -187,18 +197,21 @@ class PenaltyController extends Controller
                 unset($data['id']); // eliminar si viene como 0
 
                 $penalty = Penalty::create($data);
-
                 $message = 'Multa creada correctamente';
                 $statusCode = 201;
             }
+
+
+            $penaltyView = PenaltyView::find($penalty->id);
 
             return response()->json([
                 'status' => "success",
                 'success' => true,
                 'message' => $message,
-                'data' => $penalty,
+                'data' => $penaltyView,
             ], $statusCode);
         } catch (\Throwable $e) {
+            \Log::error('Error en PenaltyController ~ storeOrUpdate: ' . $e->getMessage());
             return response()->json([
                 'status' => "error",
                 'success' => false,
