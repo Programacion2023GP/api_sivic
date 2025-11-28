@@ -31,7 +31,7 @@ class ApiResponse
      * @param int $statusCode
      * @return JsonResponse
      */
-    public static function error($message = 'Error', $statusCode = 400): JsonResponse
+    public static function error($message = 'Error', $statusCode = 500): JsonResponse
     {
         return response()->json([
             'status' => 'error',

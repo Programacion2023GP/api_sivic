@@ -26,7 +26,7 @@ class PenaltyController extends Controller
         if ($userRole === 'director') {
             $query->where('user_dependence_id', $userDependenceId);
         } elseif ($userRole === 'usuario') {
-            $query->where('created_by', $user->id);
+            $query->where('created_by', $user->id)->where('active',1);
         }
         // Sistemas y administrativo no necesitan filtros
 
@@ -314,31 +314,23 @@ class PenaltyController extends Controller
     public function toggleActive(Request $request)
     {
         try {
-            $request->validate([
-                'id' => 'required|integer|exists:penalties,id',
-                'curp' => 'required|string'
-            ]);
+          
 
             $penalty = Penalty::findOrFail($request->id);
 
             // Solo proceder si el CURP es válido
-            if (!empty($request->curp) && trim($request->curp) !== '') {
+            // if (!empty($request->curp) && trim($request->curp) !== '') {
                 // Desactivar todas las multas con el mismo CURP (excluyendo null/vacíos)
-                $updated = Penalty::where('curp', $request->curp)
-                    ->where('active', true)
-                    ->update(['active' => false]);
-
+                $updated = Penalty::where('id', $request->id)
+                    ->update(['active' => DB::raw('NOT active')]);
                 return response()->json([
                     'success' => true,
-                    'message' => '🚫 Multas desactivadas correctamente.',
+                    'message' => '🚫 Multas desactivada correctamente.',
                     'affected_records' => $updated
                 ], 200);
-            }
+            // }
 
-            return response()->json([
-                'success' => false,
-                'message' => '❌ No se pueden desactivar multas sin CURP válido.',
-            ], 400);
+        
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

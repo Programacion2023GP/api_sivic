@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -25,7 +26,7 @@ class UserController extends Controller
             $rules = [
                 'firstName' => 'required|string|max:255',
                 'paternalSurname' => 'required|string|max:255',
-                'maternalSurname' => 'required|string|max:255',
+                // 'maternalSurname' => 'required|string|max:255',
             ];
 
             // Reglas para payroll
@@ -36,18 +37,26 @@ class UserController extends Controller
                 $payrollRules[] = 'unique:users,payroll,' . $request->id;
             }
 
-            $rules['payroll'] = $payrollRules;
-
-
+            
+            
             $messages = [
                 'payroll.unique' => 'El empleado ya está registrado',
             ];
-
+            $user = $isUpdate ? User::find($request->id) : new User();
+            if ($isUpdate && $user) {
+                // Si está editando y el payroll cambió, validar unique excluyendo el actual
+                if ($user->payroll != $request->payroll) {
+                    $payrollRules[] = Rule::unique('users', 'payroll')->ignore($user->id);
+                }
+            } else {
+                $rules['payroll'] = $payrollRules;
+                // Si es creación, validar unique normalmente
+                $payrollRules[] = 'unique:users,payroll';
+            }
             $validator = Validator::make($request->all(), $rules, $messages);
             $validator->validate();
 
             // Buscar o crear usuario
-            $user = $isUpdate ? User::find($request->id) : new User();
 
             if ($isUpdate && !$user) {
                 return ApiResponse::error('Usuario no encontrado', 404);
@@ -191,7 +200,7 @@ $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
                 return ApiResponse::error('Usuario no encontrado', 404);
             }
 
-            $technical->update(['active' => false]);
+            $technical->update(['active' => DB::raw('NOT active')]);;
 
             return ApiResponse::success(null, 'Usuario desactivado correctamente');
         } catch (Exception $e) {

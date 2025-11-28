@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         DB::table('user_permissions')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $permissions = [
+        $permissions =   $permissions = [
             'usuarios_crear',
             'usuarios_actualizar',
             'usuarios_eliminar',
@@ -34,6 +34,21 @@ class DatabaseSeeder extends Seeder
             'multas_ver',
             'multas_exportar',
             'multas_historial',
+
+            'juzgados_crear',
+            'juzgados_actualizar',
+            'juzgados_eliminar',
+            'juzgados_ver',
+            'juzgados_exportar',
+            'juzgados_historial',
+
+            'transito_vialidad__crear',
+            'transito_vialidad__actualizar',
+            'transito_vialidad__eliminar',
+            'transito_vialidad__ver',
+            'transito_vialidad__exportar',
+            'transito_vialidad__historial',
+
             'reports_dashboard',
             'catalogo_dependencia_ver',
             'catalogo_dependencia_crear',

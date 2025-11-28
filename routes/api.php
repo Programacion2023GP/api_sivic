@@ -11,6 +11,7 @@ use App\Http\Controllers\CauseOfDetentionController;
 use App\Http\Controllers\CourtController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PenaltyController;
+use App\Http\Controllers\TrafficController;
 
 // Rutas públicas
 Route::post('/users/login', [UserController::class, 'login']);
@@ -69,5 +70,14 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::post('/createorUpdate', [PenaltyController::class, 'storeOrUpdate']); // ← crea o actualiza
         Route::delete('/delete', [PenaltyController::class, 'toggleActive']);
+    });
+    Route::prefix('traffic')->group(function () {
+        Route::get('/index', [TrafficController::class, 'index']);
+        Route::post('/createorUpdate', [TrafficController::class, 'createorUpdate']); // ← crea o actualiza
+        Route::delete('/delete', [TrafficController::class, 'destroy']);
+        // Route::post('/historial', [PenaltyController::class, 'historial']);
+        // Route::get('/courts', [PenaltyController::class, 'courts']);
+
+
     });
 });

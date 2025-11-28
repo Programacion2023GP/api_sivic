@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Court;
 use App\Models\Dependence;
 use App\Models\Doctor;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Log; // porque quieres excluirlo
 use App\Models\Penalty;
+use App\Models\Traffic;
 use App\Models\User;
 use App\Observers\GenericObserver;
 use App\Observers\PenaltyObserver;
@@ -31,5 +33,7 @@ class AppServiceProvider extends ServiceProvider
         Penalty::observe(GenericObserver::class);
         Dependence::observe(GenericObserver::class);
         Doctor::observe(GenericObserver::class);
+        Court::observe(GenericObserver::class);
+        Traffic::observe(GenericObserver::class);
     }
 }
