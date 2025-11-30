@@ -114,6 +114,7 @@ class PenaltyController extends Controller
             if (!isset($data['date']) || trim($data['date']) === '') {
                 unset($data['date']);
             }
+            $data['date'] = date('y-m-d');
 
             $data['time'] = date('H:i:s');
             
