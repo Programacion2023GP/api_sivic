@@ -36,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
         Dependence::observe(GenericObserver::class);
         Doctor::observe(GenericObserver::class);
         Court::observe(GenericObserver::class);
-        Traffic::observe(GenericObserver::class);
+        // Traffic::observe(GenericObserver::class);
 
         
     }
