@@ -49,56 +49,34 @@ class PenaltyPreloadDataController extends Controller
     {
         try {
             $data = $request->all();
+            $penaltyPreloadData = null;
 
-            // Convert boolean strings to actual booleans/integers
             $data = $this->convertBooleanStrings($data);
 
-            // Normalizar fecha si viene en formato dd/mm/yyyy
             if (isset($data['date'])) {
                 $parts = explode('/', $data['date']);
                 if (count($parts) === 3) {
-                    // dd/mm/yyyy => yyyy-mm-dd
                     $data['date'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
                 }
             }
 
-
             if (!empty($data['penalty_preload_data_id']) && intval($data['penalty_preload_data_id']) > 0) {
-                // 🔄 Actualizar
-                unset($data['user_id']); // No actualizar user_id
+                unset($data['id']); // prevenir cambios de ID
 
+                unset($data['user_id']);
                 $penaltyPreloadData = PenaltyPreloadData::findOrFail($data['penalty_preload_data_id']);
                 $penaltyPreloadData->update($data);
-
-                // $message = 'Multa actualizada correctamente';
-                // $statusCode = 200;
             } else {
-                // 🆕 Crear nueva
+                unset($data['id']);
                 $data['user_id'] = Auth::id();
-                unset($data['id']); // eliminar si viene como 0
-
                 $penaltyPreloadData = PenaltyPreloadData::create($data);
-
-                // $message = 'Multa creada correctamente';
-                // $statusCode = 201;
             }
 
+            // Devuelve solo el modelo, no un JsonResponse
             return $penaltyPreloadData;
-
-            // return response()->json([
-            //     'status' => "success",
-            //     'success' => true,
-            //     'message' => $message,
-            //     'data' => $penalty,
-            // ], $statusCode);
         } catch (\Throwable $e) {
             \Log::error('Error en PenaltyPreloadDataController ~ storeOrUpdate: ' . $e->getMessage());
-
-            return response()->json([
-                'status' => "error",
-                'success' => false,
-                'message' => "Ocurrio un error",
-            ], 500);
+            throw $e; // Propaga la excepción
         }
     }
 

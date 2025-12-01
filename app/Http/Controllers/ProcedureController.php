@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiResponse;
 use App\Models\Procedure;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProcedureController extends Controller
 {

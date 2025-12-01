@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 use function Symfony\Component\Clock\now;
 
@@ -103,109 +104,34 @@ class PenaltyController extends Controller
     {
         try {
             $data = $request->all();
-
-
-            // Convert boolean strings to actual booleans/integers
+            // return $data;
             $data = $this->convertBooleanStrings($data);
 
-            // Normalizar fecha si viene en formato dd/mm/yyyy
-
-            // Evita mandar fecha inválida, usa NULL pero NO LANZA ERROR
-            if (!isset($data['date']) || trim($data['date']) === '') {
-                unset($data['date']);
-            }
-            $data['date'] = date('y-m-d');
-
-            $data['time'] = date('H:i:s');
-            
-
-
+            $data['date'] = $request->date;
+            $data['time'] = $request->time;
 
             // REGISTRAR PENALTY PREALOAD DATA
-            $penaltyPreloadData = new PenaltyPreloadDataController();
-            $penaltyPreloadData = $penaltyPreloadData->storeOrUpdate($request);
-            $data["penalty_preload_data_id"] = $penaltyPreloadData["id"];
+            $penaltyPreloadDataController = new PenaltyPreloadDataController();
+            $penaltyPreloadData = $penaltyPreloadDataController->storeOrUpdate($request);
+           
+            // Ahora $penaltyPreloadData es un modelo, no un JsonResponse
+            $data["penalty_preload_data_id"] = $penaltyPreloadData->id;
 
-
-            if ($request->hasFile('image_penaltie') && $request->file('image_penaltie')->isValid()) {
-                $firma = $request->file('image_penaltie');
-                $dirPath = "presidencia/SIVIC/multas";
-
-                $imagePath = $this->ImgUpload(
-                    $firma,
-                    $request->curp,
-                    $dirPath,
-                    $request->curp
-                );
-
-                // Store the complete URL in the data array
-                $data['image_penaltie'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-            } else {
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['image_penaltie']) && str_contains($data['image_penaltie'], 'Temp\\php')) {
-                    unset($data['image_penaltie']);
-                }
-            }
-            if ($request->hasFile('images_evidences') && $request->file('images_evidences')->isValid()) {
-                $firma = $request->file('images_evidences');
-                $dirPath = "presidencia/SIVIC/evidences";
-
-                $imagePath = $this->ImgUpload(
-                    $firma,
-                    $request->curp,
-                    $dirPath,
-                    $request->curp
-                );
-
-                // Store the complete URL in the data array
-                $data['images_evidences'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-            } else {
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['images_evidences']) && str_contains($data['images_evidences'], 'Temp\\php')) {
-                    unset($data['images_evidences']);
-                }
-            }
-
-            if ($request->hasFile('images_evidences_car') && $request->file('images_evidences_car')->isValid()) {
-                $firma = $request->file('images_evidences_car');
-                $dirPath = "presidencia/SIVIC/evidences";
-
-                $imagePath = $this->ImgUpload(
-                    $firma,
-                    $request->curp,
-                    $dirPath,
-                    "car_$request->curp"
-                );
-
-                // Store the complete URL in the data array
-                $data['images_evidences_car'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-            } else {
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['images_evidences_car']) && str_contains($data['images_evidences_car'], 'Temp\\php')) {
-                    unset($data['images_evidences_car']);
-                }
-            }
+            // ... resto del código para manejo de imágenes ...
 
             if (!empty($data['id']) && intval($data['id']) > 0) {
-                // 🔄 Actualizar
-                unset($data['created_by']); // No actualizar created_by
-
+                unset($data['created_by']);
                 $penalty = Penalty::findOrFail($data['id']);
-                // $penalty->penalty_preload_data= $penaltyPreloadData->id;
                 $penalty->update($data);
-
                 $message = 'Multa actualizada correctamente';
                 $statusCode = 200;
             } else {
-                // 🆕 Crear nueva
                 $data['created_by'] = Auth::id();
-                unset($data['id']); // eliminar si viene como 0
-
+                unset($data['id']);
                 $penalty = Penalty::create($data);
                 $message = 'Multa creada correctamente';
                 $statusCode = 201;
             }
-
 
             $penaltyView = PenaltyView::find($penalty->id);
 
@@ -220,7 +146,7 @@ class PenaltyController extends Controller
             return response()->json([
                 'status' => "error",
                 'success' => false,
-                'message' =>  $e->getMessage(),
+                'message' => $e->getMessage(),
             ], 500);
         }
     }

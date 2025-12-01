@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Traffic;
 use App\Models\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class TrafficController extends Controller
@@ -12,9 +13,14 @@ class TrafficController extends Controller
     public function createorUpdate(Request $request)
     {
         try {
-            $traffic = $request->id > 0 
-                ? Traffic::find($request->id)
-                : new Traffic();
+            $traffic = null;
+            if ($traffic = $request->id > 0) {
+                $traffic = Traffic::find($request->id);
+            } else {
+                $traffic = new Traffic();
+                $traffic->created_by = Auth::id();
+            }
+
 
             if (!$traffic && $request->id > 0) {
                 return ApiResponse::error('Registro de tránsito no encontrado', 404);

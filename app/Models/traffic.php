@@ -16,6 +16,7 @@ class Traffic extends Model
         'vehicle_brand',
         'time',
         'location',
+        'created_by',
         'person_oficial',
         'active' // Asumiendo que también tienes un campo active
     ];
