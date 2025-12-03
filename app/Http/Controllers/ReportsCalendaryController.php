@@ -23,7 +23,7 @@ class ReportsCalendaryController extends Controller
                 ->map(fn($item) => $this->formatRecord($item, 'Alcolimetro'));
 
             $publicsecurities = Publicsecurities::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Segutridad publica'));
+                ->map(fn($item) => $this->formatRecord($item, 'Seguridad publica'));
 
             $court = Court::where("active", 1)->get()
                 ->map(fn($item) => $this->formatRecord($item, 'Juzgados'));

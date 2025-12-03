@@ -55,7 +55,7 @@ class PublicSecuritiesController extends Controller
     public function index()
     {
         try {
-            $traffic = Publicsecurities::where("active", 1)->get();
+            $traffic = Publicsecurities::where("active", 1)->orderBy('id', 'desc')->get();
             return ApiResponse::success($traffic, 'Registros de seguridad publica recuperados con éxito');
         } catch (\Exception $e) {
             Log::error("Error en Securitypublic::index: " . $e->getMessage());

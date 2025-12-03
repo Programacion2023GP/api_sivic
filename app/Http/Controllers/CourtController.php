@@ -37,6 +37,8 @@ class CourtController extends Controller
                 'fine_amount',
                 'active',
             ]));
+            $data = $request->all();
+
             if ($request->hasFile('image_court') && $request->file('image_court')->isValid()) {
                 $firma = $request->file('image_court');
                 $dirPath = "presidencia/SIVIC/cuourt/evidence";
@@ -45,17 +47,18 @@ class CourtController extends Controller
                     $firma,
                     $request->date,
                     $dirPath,
-                    "$request->date"
+                    $request->date
                 );
 
-                // Store the complete URL in the data array
-                $request['image_court'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->date . "/" . $imagePath;
+                $court->image_court = "https://api.gpcenter.gomezpalacio.gob.mx/" .
+                    $dirPath . "/" . $request->date . "/" . $imagePath;
             } else {
                 // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($request['image_court']) && str_contains($request['image_court'], 'Temp\\php')) {
-                    unset($request['image_court']);
+                if (isset($data['image_court']) && str_contains($data['image_court'], 'Temp\\php')) {
+                    unset($data['image_court']);
                 }
             }
+
             // CORRECCIÓN: Asignar el ID del usuario a created_by
             $court->created_by = Auth::id();
 
@@ -85,7 +88,7 @@ class CourtController extends Controller
     public function index()
     {
         try {
-            $courts = Court::where('active', 1)->get();
+            $courts = Court::where('active', 1)->orderBy('id', 'desc')->get();
             return response()->json([
                 'success' => true,
                 'data' => $courts,

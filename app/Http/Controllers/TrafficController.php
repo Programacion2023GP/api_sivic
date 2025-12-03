@@ -54,7 +54,7 @@ class TrafficController extends Controller
     public function index()
     {
         try {
-            $traffic = Traffic::where("active", 1)->get();
+            $traffic = Traffic::where("active", 1)->orderBy('id', 'desc')->get();
             return ApiResponse::success($traffic, 'Registros de tránsito recuperados con éxito');
         } catch (\Exception $e) {
             Log::error("Error en TrafficController::index: " . $e->getMessage());
