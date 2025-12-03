@@ -37,7 +37,25 @@ class CourtController extends Controller
                 'fine_amount',
                 'active',
             ]));
+            if ($request->hasFile('image_court') && $request->file('image_court')->isValid()) {
+                $firma = $request->file('image_court');
+                $dirPath = "presidencia/SIVIC/cuourt/evidence";
 
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->date,
+                    $dirPath,
+                    "$request->date"
+                );
+
+                // Store the complete URL in the data array
+                $request['image_court'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->date . "/" . $imagePath;
+            } else {
+                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
+                if (isset($request['image_court']) && str_contains($request['image_court'], 'Temp\\php')) {
+                    unset($request['image_court']);
+                }
+            }
             // CORRECCIÓN: Asignar el ID del usuario a created_by
             $court->created_by = Auth::id();
 

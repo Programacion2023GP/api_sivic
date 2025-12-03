@@ -22,5 +22,6 @@ class Court extends Model
         'active',
         'penalties_id',
         'created_by',
+        'image_court',
     ];
 }

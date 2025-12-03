@@ -12,6 +12,7 @@ use App\Http\Controllers\CourtController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PublicSecuritiesController;
+use App\Http\Controllers\ReportsCalendaryController;
 use App\Http\Controllers\TrafficController;
 use App\Models\Publicsecurities;
 
@@ -91,4 +92,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     });
+});
+Route::prefix('calendary')->group(function () {
+    Route::get('/index', [ReportsCalendaryController::class, 'index']);
+ 
+    // Route::post('/historial', [PenaltyController::class, 'historial']);
+    // Route::get('/courts', [PenaltyController::class, 'courts']);
+
+
 });

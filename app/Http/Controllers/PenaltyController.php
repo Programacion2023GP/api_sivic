@@ -29,7 +29,7 @@ class PenaltyController extends Controller
         if ($userRole === 'director') {
             $query->where('user_dependence_id', $userDependenceId);
         } elseif ($userRole === 'usuario') {
-            $query->where('created_by', $user->id)->where('active',1);
+            $query->where('created_by', $user->id)->where('active', 1);
         }
         // Sistemas y administrativo no necesitan filtros
 
@@ -113,12 +113,68 @@ class PenaltyController extends Controller
             // REGISTRAR PENALTY PREALOAD DATA
             $penaltyPreloadDataController = new PenaltyPreloadDataController();
             $penaltyPreloadData = $penaltyPreloadDataController->storeOrUpdate($request);
-           
+
             // Ahora $penaltyPreloadData es un modelo, no un JsonResponse
             $data["penalty_preload_data_id"] = $penaltyPreloadData->id;
 
             // ... resto del código para manejo de imágenes ...
+            if ($request->hasFile('image_penaltie') && $request->file('image_penaltie')->isValid()) {
+                $firma = $request->file('image_penaltie');
+                $dirPath = "presidencia/SIVIC/multas";
 
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->curp,
+                    $dirPath,
+                    $request->curp
+                );
+
+                // Store the complete URL in the data array
+                $data['image_penaltie'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
+            } else {
+                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
+                if (isset($data['image_penaltie']) && str_contains($data['image_penaltie'], 'Temp\\php')) {
+                    unset($data['image_penaltie']);
+                }
+            }
+            if ($request->hasFile('images_evidences') && $request->file('images_evidences')->isValid()) {
+                $firma = $request->file('images_evidences');
+                $dirPath = "presidencia/SIVIC/evidences";
+
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->curp,
+                    $dirPath,
+                    $request->curp
+                );
+
+                // Store the complete URL in the data array
+                $data['images_evidences'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
+            } else {
+                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
+                if (isset($data['images_evidences']) && str_contains($data['images_evidences'], 'Temp\\php')) {
+                    unset($data['images_evidences']);
+                }
+            }
+            if ($request->hasFile('images_evidences_car') && $request->file('images_evidences_car')->isValid()) {
+                $firma = $request->file('images_evidences_car');
+                $dirPath = "presidencia/SIVIC/evidences";
+
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->curp,
+                    $dirPath,
+                    "car_$request->curp"
+                );
+
+                // Store the complete URL in the data array
+                $data['images_evidences_car'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
+            } else {
+                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
+                if (isset($data['images_evidences_car']) && str_contains($data['images_evidences_car'], 'Temp\\php')) {
+                    unset($data['images_evidences_car']);
+                }
+            }
             if (!empty($data['id']) && intval($data['id']) > 0) {
                 unset($data['created_by']);
                 $penalty = Penalty::findOrFail($data['id']);
@@ -174,94 +230,29 @@ class PenaltyController extends Controller
         return $data;
     }
 
-    public function ImgUpload($image, $destination, $dir, $imgName)
-    {
-        // Verificar que la imagen sea válida
-        if (!$image || !$image->isValid()) {
-            throw new \Exception('La imagen no es válida');
-        }
-
-        // Generar nombre único para el archivo
-        $extension = $image->getClientOriginalExtension();
-        $filename = $imgName . '_' . time() . '.' . $extension;
-
-        // Subir al microservicio con los parámetros específicos
-        $imageUrl = $this->uploadToMicroservice($image, $destination, $dir, $filename);
-
-        // Devolver la URL completa para la BD
-        return $filename;
-    }
-
-    /**
-     * Función auxiliar para subir al microservicio con los parámetros específicos
-     */
-    private function uploadToMicroservice($file, $destination, $dir, $filename)
-    {
-        try {
-            $client = new \GuzzleHttp\Client([
-                'verify' => false, // Disable SSL verification
-            ]);
-
-            $response = $client->request('POST', 'https://api.gpcenter.gomezpalacio.gob.mx/api/smImgUpload', [
-                'multipart' => [
-                    [
-                        'name'     => 'Firma_Director',
-                        'contents' => fopen($file->getPathname(), 'r'),
-                        'filename' => $filename,
-                    ],
-                    [
-                        'name' => 'dirDestination',
-                        'contents' => $destination,
-                    ],
-                    [
-                        'name' => 'dirPath',
-                        'contents' => $dir,
-                    ],
-                    [
-                        'name' => 'imgName',
-                        'contents' => $filename,
-                    ],
-                    [
-                        'name' => 'requestFileName',
-                        'contents' => 'Firma_Director',
-                    ],
-                ],
-                'timeout' => 30, // Add timeout
-                'connect_timeout' => 10,
-            ]);
-
-            // Check response status
-            if ($response->getStatusCode() !== 200) {
-                throw new \Exception('Error al subir la imagen: ' . $response->getBody());
-            }
-
-            return $response;
-        } catch (\Exception $e) {
-            throw new \Exception('Error en uploadToMicroservice: ' . $e->getMessage());
-        }
-    }
+   
 
 
     public function toggleActive(Request $request)
     {
         try {
-          
+
 
             $penalty = Penalty::findOrFail($request->id);
 
             // Solo proceder si el CURP es válido
             // if (!empty($request->curp) && trim($request->curp) !== '') {
-                // Desactivar todas las multas con el mismo CURP (excluyendo null/vacíos)
-                $updated = Penalty::where('id', $request->id)
-                    ->update(['active' => DB::raw('NOT active')]);
-                return response()->json([
-                    'success' => true,
-                    'message' => '🚫 Multas desactivada correctamente.',
-                    'affected_records' => $updated
-                ], 200);
+            // Desactivar todas las multas con el mismo CURP (excluyendo null/vacíos)
+            $updated = Penalty::where('id', $request->id)
+                ->update(['active' => DB::raw('NOT active')]);
+            return response()->json([
+                'success' => true,
+                'message' => '🚫 Multas desactivada correctamente.',
+                'affected_records' => $updated
+            ], 200);
             // }
 
-        
+
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
