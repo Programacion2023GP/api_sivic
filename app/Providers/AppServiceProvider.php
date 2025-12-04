@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Log; // porque quieres excluirlo
 use App\Models\Penalty;
+use App\Models\Publicsecurities;
 use App\Models\Traffic;
 use App\Models\User;
 use App\Observers\GenericObserver;
@@ -36,7 +37,8 @@ class AppServiceProvider extends ServiceProvider
         Dependence::observe(GenericObserver::class);
         Doctor::observe(GenericObserver::class);
         Court::observe(GenericObserver::class);
-        // Traffic::observe(GenericObserver::class);
+        Traffic::observe(GenericObserver::class);
+        Publicsecurities::observe(GenericObserver::class);
 
         
     }
