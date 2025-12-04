@@ -17,21 +17,27 @@ class ReportsCalendaryController extends Controller
         try {
 
             $traffic = Traffic::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Transito Vialidad'));
+                ->map(fn($item) => $this->formatRecord($item, 'Transito Vialidad'))
+                ->values();
 
             $penaltyView = PenaltyView::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Alcolimetro'));
+                ->map(fn($item) => $this->formatRecord($item, 'Alcolimetro'))
+                ->values();
 
             $publicsecurities = Publicsecurities::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Seguridad publica'));
+                ->map(fn($item) => $this->formatRecord($item, 'Seguridad publica'))
+                ->values();
 
             $court = Court::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Juzgados'));
+                ->map(fn($item) => $this->formatRecord($item, 'Juzgados'))
+                ->values();
 
             $result = $traffic
                 ->merge($penaltyView)
                 ->merge($publicsecurities)
-                ->merge($court);
+                ->merge($court)
+                ->values(); // para resetear índices
+
 
             return ApiResponse::success($result, 'Registros combinados recuperados correctamente');
         } catch (\Exception $e) {
