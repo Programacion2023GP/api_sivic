@@ -20,6 +20,7 @@ class Publicsecurities extends Model
         'age',
         'created_by',
         'location',
+        'image_security',
         'active',
     ];
 }

@@ -18,6 +18,7 @@ class Traffic extends Model
         'location',
         'created_by',
         'person_oficial',
+        'image_traffic',
         'active' // Asumiendo que también tienes un campo active
     ];
 

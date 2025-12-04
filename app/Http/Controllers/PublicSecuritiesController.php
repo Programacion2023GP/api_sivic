@@ -36,8 +36,28 @@ class PublicSecuritiesController extends Controller
             $security->time = $request->time;
             $security->age = $request->age;
             $security->location = $request->location;
-            $security->active = $request->active ?? 1;
+            // $security->active = $request->active ?? 1;
+            $data = $request->all();
 
+            if ($request->hasFile('image_security') && $request->file('image_security')->isValid()) {
+                $firma = $request->file('image_security');
+                $dirPath = "presidencia/SIVIC/traffic/evidence";
+
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->detainee_name,
+                    $dirPath,
+                    $request->detainee_name
+                );
+
+                $security->image_security = "https://api.gpcenter.gomezpalacio.gob.mx/" .
+                    $dirPath . "/" . $request->detainee_name . "/" . $imagePath;
+            } else {
+                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
+                if (isset($data['image_security']) && str_contains($data['image_security'], 'Temp\\php')) {
+                    unset($data['image_security']);
+                }
+            }
             $security->save();
 
             $message = $request->id > 0
