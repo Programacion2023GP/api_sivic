@@ -9,37 +9,32 @@ use App\Models\PenaltyView;
 use App\Models\Publicsecurities;
 use App\Models\Traffic;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ReportsCalendaryController extends Controller
 {
     public function index()
     {
         try {
+            $result = collect();
 
-            $traffic = Traffic::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Transito Vialidad'))
-                ->values();
+            // Tráfico
+            $traffic = Traffic::where("active", 1)->get();
+            $this->addToCollection($result, $traffic, 'Transito Vialidad');
 
-            $penaltyView = PenaltyView::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Alcolimetro'))
-                ->values();
+            // Alcolímetro
+            $penaltyView = PenaltyView::where("active", 1)->get();
+            $this->addToCollection($result, $penaltyView, 'Alcolimetro');
 
-            $publicsecurities = Publicsecurities::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Seguridad publica'))
-                ->values();
+            // Seguridad pública
+            $publicsecurities = Publicsecurities::where("active", 1)->get();
+            $this->addToCollection($result, $publicsecurities, 'Seguridad publica');
 
-            $court = Court::where("active", 1)->get()
-                ->map(fn($item) => $this->formatRecord($item, 'Juzgados'))
-                ->values();
+            // Juzgados
+            $court = Court::where("active", 1)->get();
+            $this->addToCollection($result, $court, 'Juzgados');
 
-            $result = $traffic
-                ->merge($penaltyView)
-                ->merge($publicsecurities)
-                ->merge($court)
-                ->values(); // para resetear índices
-
-
-            return ApiResponse::success($result, 'Registros combinados recuperados correctamente');
+            return ApiResponse::success($result->values()->all(), 'Registros combinados recuperados correctamente');
         } catch (\Exception $e) {
             Log::error("Error en ReportsCalendaryController::index: " . $e->getMessage());
             return ApiResponse::error('Error al recuperar los registros', 500);
@@ -47,36 +42,54 @@ class ReportsCalendaryController extends Controller
     }
 
     /**
-     * Convierte date + time en datetime o usa created_at
+     * Agrega registros a la colección principal
      */
-    private function formatRecord($item, string $module)
+    private function addToCollection(Collection &$collection, $items, string $module): void
     {
-        $datetime = null;
-
-        // 1. Si existe date + time → unir
-        if (!empty($item->date) && !empty($item->time)) {
-            $datetime = "{$item->date} {$item->time}";
+        foreach ($items as $item) {
+            $formatted = $this->formatRecord($item, $module);
+            if ($formatted) {
+                $collection->push($formatted);
+            }
         }
+    }
 
-        // 2. Si no existe y hay created_at → usarlo
-        if (!$datetime && $item->created_at) {
-            $datetime = $item->created_at->format("Y-m-d H:i:s");
+    /**
+     * Formatea un registro individual
+     */
+    private function formatRecord($item, string $module): ?array
+    {
+        try {
+            $datetime = null;
+
+            // 1. Si existe date + time → unir
+            if ($item->date && $item->time) {
+                $datetime = "{$item->date} {$item->time}";
+            }
+
+            // 2. Si no existe y hay created_at → usarlo
+            if (!$datetime && $item->created_at) {
+                $datetime = $item->created_at instanceof \DateTime
+                    ? $item->created_at->format("Y-m-d H:i:s")
+                    : (string) $item->created_at;
+            }
+
+            // 3. Si no hay datetime válido, omitir este registro
+            if (!$datetime || strtotime($datetime) === false) {
+                return null;
+            }
+
+            return [
+                'id' => $item->id,
+                'module' => $module,
+                'data' => $item->toArray(),
+                'dateTime' => $datetime,
+                'date' => date("Y-m-d", strtotime($datetime)),
+                'time' => date("H:i:s", strtotime($datetime)),
+            ];
+        } catch (\Exception $e) {
+            Log::warning("Error formateando registro en ReportsCalendaryController: " . $e->getMessage());
+            return null;
         }
-
-        // 3. Si sigue sin existir datetime → NO enviar date/time
-        $base = [
-            'id' => $item->id,
-            'module' => $module,
-            'data' => $item,
-        ];
-
-        // 4. Agregar solo si hay datetime válido
-        if ($datetime) {
-            $base['dateTime'] = $datetime;
-            $base['date'] = date("Y-m-d", strtotime($datetime));
-            $base['time'] = date("H:i:s", strtotime($datetime));
-        }
-
-        return $base;
     }
 }
