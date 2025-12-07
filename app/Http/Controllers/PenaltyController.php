@@ -128,7 +128,7 @@ class PenaltyController extends Controller
                     $dirPath,
                     $request->curp
                 );
-
+$data['active']=true;
                 // Store the complete URL in the data array
                 $data['image_penaltie'] = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
             } else {

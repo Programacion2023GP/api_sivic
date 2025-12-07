@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AlcoholProcessController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DependenceController;
@@ -92,12 +93,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
     });
+    Route::prefix('calendary')->group(function () {
+        Route::get('/index', [ReportsCalendaryController::class, 'index']);
+     
+        // Route::post('/historial', [PenaltyController::class, 'historial']);
+        // Route::get('/courts', [PenaltyController::class, 'courts']);
+    
+    
+    });
 });
-Route::prefix('calendary')->group(function () {
-    Route::get('/index', [ReportsCalendaryController::class, 'index']);
- 
-    // Route::post('/historial', [PenaltyController::class, 'historial']);
-    // Route::get('/courts', [PenaltyController::class, 'courts']);
-
-
+Route::prefix('process')->group(function(){
+    Route::post('/index', [AlcoholProcessController::class, 'process']);
 });
