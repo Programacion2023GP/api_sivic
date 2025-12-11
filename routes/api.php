@@ -101,7 +101,18 @@ Route::middleware('auth:sanctum')->group(function () {
     
     
     });
-});
-Route::prefix('process')->group(function(){
-    Route::post('/index', [AlcoholProcessController::class, 'process']);
+    Route::prefix('alcohol_cases')->group(function () {
+        Route::get('/', [AlcoholProcessController::class, 'index']);
+        Route::post('/createorUpdate', [AlcoholProcessController::class, 'store']);
+        Route::get('/range', [AlcoholProcessController::class, 'getByAlcoholRange']);
+        Route::get('/process/{processId}', [AlcoholProcessController::class, 'getByProcess']);
+    
+        Route::prefix('{id}')->group(function () {
+            Route::get('/', [AlcoholProcessController::class, 'show']);
+            Route::put('/', [AlcoholProcessController::class, 'update']);
+            Route::delete('/', [AlcoholProcessController::class, 'destroy']);
+            Route::post('/advance', [AlcoholProcessController::class, 'advance']);
+            Route::post('/confirm', [AlcoholProcessController::class, 'confirm']);
+        });
+    });
 });

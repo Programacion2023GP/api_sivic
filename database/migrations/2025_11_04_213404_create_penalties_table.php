@@ -10,39 +10,27 @@ return new class extends Migration
     {
         Schema::create('penalties', function (Blueprint $table) {
             $table->id();
-            $table->string('time');
-            $table->date('date');
+
             $table->string('image_penaltie')->nullable();
             $table->string('images_evidences')->nullable();
             $table->string('images_evidences_car')->nullable();
 
-            $table->string('person_contraloria')->nullable();
-            $table->string('oficial_payroll')->nullable();
-            $table->string('person_oficial')->nullable();
+          
             $table->string('vehicle_service_type')->nullable();
             $table->integer('alcohol_concentration')->nullable();
-            $table->integer('group')->nullable();
 
             $table->string('municipal_police')->nullable();
-            $table->string('civil_protection')->nullable();
 
-            $table->string('command_vehicle')->nullable();
-            $table->string('command_troops')->nullable();
-            $table->string('command_details')->nullable();
-            $table->string('filter_supervisor')->nullable();
             $table->string('detainee_released_to')->nullable();
 
-            $table->string('name')->nullable();
-            $table->string('cp')->nullable();
-            $table->string('city')->nullable();
-            $table->integer('age')->nullable();
+         
             $table->float('amountAlcohol');
             $table->integer('number_of_passengers')->nullable();
-            $table->string('plate_number')->nullable();
             $table->string('detainee_phone_number')->nullable();
             $table->string('curp')->nullable();
             $table->text('observations')->nullable();
             $table->boolean('active')->default(true);
+            $table->integer('penalty_preload_data_id')->nullable();
 
             $table->foreignId('created_by')->constrained('users'); // usuario que creó el registro
             $table->timestamps();

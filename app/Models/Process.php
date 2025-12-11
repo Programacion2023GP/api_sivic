@@ -7,16 +7,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Process extends Model
 {
-    use HasFactory;
-
     protected $table = 'processes';
 
     protected $fillable = [
-        'name',
+        'model_class',
         'orden',
-        'active',
+        'active'
     ];
 
+    protected $casts = [
+        'orden' => 'integer',
+        'active' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
+    ];
+
+    /**
+     * Relación: Reglas que usan este proceso (Many to Many)
+     */
     public function rules()
     {
         return $this->belongsToMany(
@@ -24,7 +32,53 @@ class Process extends Model
             'alcohol_range_rules_process',
             'process_id',
             'rule_id'
-        )->withPivot(['active'])
+        )
+            ->withPivot('active')
             ->withTimestamps();
+    }
+
+    /**
+     * Relación: Casos actualmente en este proceso
+     */
+    public function currentCases()
+    {
+        return $this->hasMany(AlcoholCase::class, 'current_process_id');
+    }
+
+    /**
+     * Scope: Procesos activos
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('active', true);
+    }
+
+    /**
+     * Scope: Ordenados por campo 'orden'
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('orden');
+    }
+
+    /**
+     * Obtener el nombre de la clase sin namespace
+     */
+    public function getClassNameAttribute()
+    {
+        if (!$this->model_class) {
+            return null;
+        }
+
+        $parts = explode('\\', $this->model_class);
+        return end($parts);
+    }
+
+    /**
+     * Verificar si la clase del modelo existe
+     */
+    public function modelClassExists()
+    {
+        return $this->model_class && class_exists($this->model_class);
     }
 }

@@ -24,7 +24,7 @@ class PenaltyController extends Controller
         $userDependenceId = $user->dependence_id;
 
         $query = PenaltyView::query();
-
+        
         // Aplicar filtros según el rol
         if ($userRole === 'director') {
             $query->where('user_dependence_id', $userDependenceId);
@@ -106,9 +106,7 @@ class PenaltyController extends Controller
             $data = $request->all();
             // return $data;
             $data = $this->convertBooleanStrings($data);
-
-            $data['date'] = $request->date;
-            $data['time'] = $request->time;
+         
 
             // REGISTRAR PENALTY PREALOAD DATA
             $penaltyPreloadDataController = new PenaltyPreloadDataController();
@@ -177,6 +175,8 @@ $data['active']=true;
             }
             if (!empty($data['id']) && intval($data['id']) > 0) {
                 unset($data['created_by']);
+                Log::error("se actualizo la info de el item", []);
+
                 $penalty = Penalty::findOrFail($data['id']);
                 $penalty->update($data);
                 $message = 'Multa actualizada correctamente';
@@ -189,21 +189,11 @@ $data['active']=true;
                 $statusCode = 201;
             }
 
-            $penaltyView = PenaltyView::find($penalty->id);
+            // $penaltyView = PenaltyView::find($penalty->id);
 
-            return response()->json([
-                'status' => "success",
-                'success' => true,
-                'message' => $message,
-                'data' => $penaltyView,
-            ], $statusCode);
+            return $penalty;
         } catch (\Throwable $e) {
-            \Log::error('Error en PenaltyController ~ storeOrUpdate: ' . $e->getMessage());
-            return response()->json([
-                'status' => "error",
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            throw $e;
         }
     }
 

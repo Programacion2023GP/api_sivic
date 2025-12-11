@@ -11,8 +11,7 @@ class Penalty extends Model
 
     protected $fillable = [
         'penalty_preload_data_id',
-        'time',
-        // 'date',
+        
         'images_evidences',
         'images_evidences_car',
         // 'person_contraloria',
@@ -27,16 +26,11 @@ class Penalty extends Model
         // 'command_troops',
         // 'command_details',
         // 'filter_supervisor',
-        'name',
-        'lat',
-        'lon',
-        'cp',
-        'city',
-        'age',
+      
         // 'doctor_id',
+        
         'amountAlcohol',
         'number_of_passengers',
-        'plate_number',
         'detainee_released_to',
         'detainee_phone_number',
         'curp',

@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'min_value'  => 3.00,
-                'max_value'  => null, // infinito
+                'max_value'  => 90.00, // infinito
                 'active'     => true,
                 'created_at' => now(),
                 'updated_at' => now(),

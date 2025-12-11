@@ -50,7 +50,8 @@ class PenaltyPreloadDataController extends Controller
         try {
             $data = $request->all();
             $penaltyPreloadData = null;
-
+            $data['date'] = $request->date;
+            $data['time'] = $request->time;
             $data = $this->convertBooleanStrings($data);
 
             if (isset($data['date'])) {
