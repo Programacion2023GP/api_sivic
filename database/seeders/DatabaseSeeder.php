@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
             'seguridad_publica__actualizar',
             'seguridad_publica__eliminar',
 
+            
             'vista_reports',
             'reports_dashboard'
         ];
