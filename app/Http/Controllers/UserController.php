@@ -131,7 +131,7 @@ class UserController extends Controller
         ]);
 
         $user = User::where('payroll', $request->payroll)->first();
-
+        
         if (!$user || !Hash::check($request->password, $user->password)) {
             return ApiResponse::error('Credenciales incorrectas', 401);
         }
@@ -139,10 +139,13 @@ class UserController extends Controller
             ->join('permissions', 'permissions.id', '=', 'user_permissions.permission_id')
             ->where('user_permissions.user_id', $user->id)
             ->pluck('permissions.name');        // Crear token
-$token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
+
+        $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
 
         return ApiResponse::success([
             'user' => $user,
+            'status' => true,
+
             'token' => $token,
             'permisos'=>$permisos,
             'token_type' => 'Bearer',
