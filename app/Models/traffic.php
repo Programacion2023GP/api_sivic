@@ -15,6 +15,7 @@ class Traffic extends Model
         'plate_number',
         'vehicle_brand',
         'time',
+        
         'location',
         'created_by',
         'person_oficial',
