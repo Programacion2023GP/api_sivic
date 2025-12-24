@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('alcohol_cases', function (Blueprint $table) {
             $table->id();
-            $table->decimal('alcohol_level', 4, 2); 
+            $table->decimal('alcohol_level', 4, 2);
             $table->unsignedBigInteger('current_process_id')->nullable();
 
             $table->string('time');
@@ -27,6 +27,7 @@ return new class extends Migration
             $table->integer('age')->nullable();
             $table->double('long')->nullable();
             $table->double('lat')->nullable();
+            $table->boolean('finish')->default(false);
 
             // residencia
             $table->unsignedBigInteger('residence_folio')->nullable()->index();

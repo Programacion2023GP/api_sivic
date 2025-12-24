@@ -38,7 +38,50 @@ class AlcoholRangeRule extends Model
             ->withTimestamps()
             ->orderBy('orden');
     }
+    // En el modelo AlcoholCase
+    public function nextProcess()
+    {
+        // 1. Obtener la regla aplicable
+        $rule = $this->applicableRule();
 
+        if (!$rule) {
+            return null;
+        }
+
+        // 2. Obtener todos los procesos activos de la regla ordenados
+        $processes = $rule->processes()
+            ->wherePivot('active', true)
+            ->orderBy('orden')
+            ->get();
+
+        if ($processes->isEmpty()) {
+            return null;
+        }
+
+        // 3. Si no hay proceso actual, retornar el primero
+        if (!$this->current_process_id) {
+            return $processes->first();
+        }
+
+        // 4. Buscar la posición del proceso actual
+        $currentIndex = $processes->search(function ($process) {
+            return $process->id === $this->current_process_id;
+        });
+
+        // 5. Si no se encuentra el proceso actual
+        if ($currentIndex === false) {
+            // Tal vez el proceso fue desactivado, retornar el primero
+            return $processes->first();
+        }
+
+        // 6. Si es el último proceso, retornar null
+        if ($currentIndex === $processes->count() - 1) {
+            return null;
+        }
+
+        // 7. Retornar el siguiente proceso
+        return $processes[$currentIndex + 1];
+    }
     /**
      * Scope: Reglas activas
      */

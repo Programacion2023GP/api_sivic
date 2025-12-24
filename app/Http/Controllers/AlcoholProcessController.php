@@ -35,9 +35,6 @@ class AlcoholProcessController extends Controller
     public function store(Request $request)
     {
         // 1. Validar
-        $validator = Validator::make($request->all(), [
-            'alcohol_level' => 'required|numeric|min:0|max:99.99',
-        ]);
 
         // if ($validator->fails()) {
         //     return ApiResponse::validationError('Error de validación');
@@ -48,23 +45,56 @@ class AlcoholProcessController extends Controller
 
             // 2. Crear el caso básico
             // return $request->all();
-            $case = AlcoholCase::create([
-                'alcohol_level' => $request->alcohol_level,
-                'active' => true,
-                'name'=>$request->name,
-                'city' => $request->city,
-                'cp' => $request->cp,
-                'oficial_payroll' => $request->oficial_payroll,
-                'person_oficial' => $request->person_oficial,
-                'plate_number' => $request->plate_number,
-                'age' => $request->age,
-                'long' => $request->long,
-                'lat' => $request->lat,
-                'date' => $request->date,
-                'time' => $request->time,
-                "residence_folio" => $request->residence_folio,
-                'requires_confirmation' => false
-            ]);
+            if ($request->id == 0) {
+                // CREAR NUEVO CASO
+                $case = AlcoholCase::create([
+                    'alcohol_level' => $request->alcohol_concentration,
+                    'active' => true,
+                    'name' => $request->name,
+                    'city' => $request->city,
+                    'cp' => $request->cp,
+                    'oficial_payroll' => $request->oficial_payroll,
+                    'person_oficial' => $request->person_oficial,
+                    'plate_number' => $request->plate_number,
+                    'age' => $request->age,
+                    'long' => $request->long,
+                    'lat' => $request->lat,
+                    'date' => $request->date,
+                    'time' => $request->time,
+                    "residence_folio" => null,
+                    'requires_confirmation' => false
+                ]);
+            } else {
+                // ACTUALIZAR CASO EXISTENTE
+                $case = AlcoholCase::find($request->id);
+
+                if ($case) {
+                    $case->update([
+                        'alcohol_level' => $request->alcohol_concentration ?? $case->alcohol_level,
+                        'name' => $request->name ?? $case->name,
+                        'city' => $request->city ?? $case->city,
+                        'cp' => $request->cp ?? $case->cp,
+                        'oficial_payroll' => $request->oficial_payroll ?? $case->oficial_payroll,
+                        'person_oficial' => $request->person_oficial ?? $case->person_oficial,
+                        'plate_number' => $request->plate_number ?? $case->plate_number,
+                        'age' => $request->age ?? $case->age,
+                        'long' => $request->long ?? $case->long,
+                        'lat' => $request->lat ?? $case->lat,
+                        'date' => $request->date ?? $case->date,
+                        'time' => $request->time ?? $case->time,
+                        // residence_folio no se actualiza aquí normalmente
+                        // 'requires_confirmation' tampoco
+                    ]);
+                }
+            }
+
+            // 2. ACTUALIZAR LOS CASOS EXISTENTES para que apunten al NUEVO
+            if ($request->residence_folio) {
+                // Actualizar TODOS los casos que tenían residence_folio = X (incluyendo el caso X mismo)
+                AlcoholCase::where('residence_folio', $request->residence_folio)
+                    ->orWhere('id', $request->residence_folio)
+                    ->update(['residence_folio' => $case->id]);
+            }
 
             // 3. Buscar la regla para este nivel de alcohol
             $alcoholLevel = $request->alcohol_level;
@@ -93,7 +123,12 @@ class AlcoholProcessController extends Controller
             }
 
             // 5. Asignar el proceso al caso
-            $case->current_process_id = $firstProcess->id;
+            if ($request->id == 0) {
+                # code...
+                $case->current_process_id = $firstProcess->id;
+            }
+            $case->active = true;
+
             $case->save();
             // 6. Determinar qué modelo crear según el proceso
             $modelClass = $firstProcess->model_class;
@@ -103,23 +138,55 @@ class AlcoholProcessController extends Controller
             switch ($modelClass) {
                 case 'App\\Models\\Penalty':
                     $controller = new PenaltyController();
-                    $dataProccess = $controller->storeOrUpdate($request);
+                    if($request->id>0)
+                    {
+                        $latestHistory = AlcoholHistory::where("case_id", $case->id)
+                            ->orderByDesc('id')
+                            ->first();
+                        $modifiedData = $request->all();
+                        $modifiedData['id'] = $latestHistory->step_id;
+
+                        // Crear nuevo request
+                        $modifiedRequest = new Request($modifiedData);
+                        // Usar el request modificado
+                        $dataProccess = $controller->storeOrUpdate($modifiedRequest);
+                    }
+                    else{
+
+                        $dataProccess = $controller->storeOrUpdate($request);
+                    }
                     break;
 
                 case 'App\\Models\\PublicSecurities':
-                    // ...
+
                     break;
 
                 case 'App\\Models\\Traffic':
-                    // ...
+                    $controller = new PenaltyController();
+                    if ($request->id > 0) {
+                        $latestHistory = AlcoholHistory::where("case_id", $case->id)
+                            ->orderByDesc('id')
+                            ->first();
+                        $modifiedData = $request->all();
+                        $modifiedData['id'] = $latestHistory->step_id;
+
+                        // Crear nuevo request
+                        $modifiedRequest = new Request($modifiedData);
+                        // Usar el request modificado
+                        $dataProccess = $controller->storeOrUpdate($modifiedRequest);
+                    } else {
+
+                        $dataProccess = $controller->storeOrUpdate($request);
+                    }
                     break;
 
                 case 'App\\Models\\Court':
-                    // ...
+
                     break;
 
                 default:
                     DB::rollBack();
+
                     return ApiResponse::error('Modelo no reconocido: ' . $modelClass, 400);
             }
 
@@ -127,23 +194,23 @@ class AlcoholProcessController extends Controller
             // 8. Guardar referencia al registro creado
             // $case->current_process_record_type = $modelClass;
             // $case->current_process_record_id = $record->id;
-            $case->save();
 
-            $requiresConfirmation = filter_var($request->requires_confirmation, FILTER_VALIDATE_BOOLEAN);
-            if (intval($request->id) === 0 && !$requiresConfirmation) {
-                Log::error("entramos",[]);
+            $case->save();
+            
+          
                 AlcoholHistory::create([
-                    "case_id"=> $case->id,
+                    "case_id" => $case->id,
                     "process_id" => $firstProcess->pivot->process_id,
-                    "user_id"=>Auth::id(),
+                    "user_id" => Auth::id(),
                     "step_id" => $dataProccess->id,
-                    
+
                 ]);
-            }
+            
             DB::commit();
             return ApiResponse::success(
-                $dataProccess
-            , 'Registrado correctamente');
+                $dataProccess,
+                'Registrado correctamente'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponse::error('Error al crear el caso: ' . $e->getMessage(), 500);
@@ -243,13 +310,173 @@ class AlcoholProcessController extends Controller
     /**
      * Avanzar un caso al siguiente proceso
      */
-    public function advance($id)
+    public function advance(Request $request)
     {
         try {
             DB::beginTransaction();
 
-            $case = AlcoholCase::with(['currentProcess'])->find($id);
+            // 2. Crear el caso básico
+            // return $request->all();
+            $alcoholLevel = $request->alcohol_concentration;
+            $rule = AlcoholRangeRule::where('active', true)
+                ->where('min_value', '<=', $alcoholLevel)
+                ->where(function ($query) use ($alcoholLevel) {
+                    $query->where('max_value', '>=', $alcoholLevel)
+                        ->orWhereNull('max_value');
+                })
+                ->first();
+            $firstProcess = $rule->processes()
+                ->wherePivot('active', true)
+                ->orderBy('orden')
+                ->first();
 
+            if ($request->id == 0) {
+                // CREAR NUEVO CASO
+                $case = AlcoholCase::create([
+                    'alcohol_level' => $request->alcohol_concentration,
+                    'active' => true,
+                    'name' => $request->name,
+                    'city' => $request->city,
+                    'cp' => $request->cp,
+                    'oficial_payroll' => $request->oficial_payroll,
+                    'person_oficial' => $request->person_oficial,
+                    'plate_number' => $request->plate_number,
+                    'age' => $request->age,
+                    'long' => $request->long,
+                    'lat' => $request->lat,
+                    'date' => $request->date,
+                    'time' => $request->time,
+                    "residence_folio" => null,
+                    'requires_confirmation' => false
+                ]);
+            } else {
+                // ACTUALIZAR CASO EXISTENTE
+                $case = AlcoholCase::find($request->id);
+                
+                if ($case) {
+                    $case->update([
+                        'alcohol_level' => $request->alcohol_concentration ?? $case->alcohol_level,
+                        'name' => $request->name ?? $case->name,
+                        'city' => $request->city ?? $case->city,
+                        'cp' => $request->cp ?? $case->cp,
+                        'oficial_payroll' => $request->oficial_payroll ?? $case->oficial_payroll,
+                        'person_oficial' => $request->person_oficial ?? $case->person_oficial,
+                        'plate_number' => $request->plate_number ?? $case->plate_number,
+                        'age' => $request->age ?? $case->age,
+                        'long' => $request->long ?? $case->long,
+                        'lat' => $request->lat ?? $case->lat,
+                        'date' => $request->date ?? $case->date,
+                        'time' => $request->time ?? $case->time,
+                        // residence_folio no se actualiza aquí normalmente
+                        // 'requires_confirmation' tampoco
+                    ]);
+                }
+            }
+
+            // 2. ACTUALIZAR LOS CASOS EXISTENTES para que apunten al NUEVO
+            if ($request->id == 0) {
+
+                if ($request->residence_folio) {
+                    // Actualizar TODOS los casos que tenían residence_folio = X (incluyendo el caso X mismo)
+                    AlcoholCase::where('residence_folio', $request->residence_folio)
+                        ->orWhere('id', $request->residence_folio)
+                        ->update(['residence_folio' => $case->id]);
+                }
+
+                // 3. Buscar la regla para este nivel de alcohol
+
+                if (!$rule) {
+                    DB::rollBack();
+                    return ApiResponse::error('No se encontró una regla para este nivel de alcohol: ' . $alcoholLevel, 400);
+                }
+
+                // 4. Obtener el primer proceso de la regla
+
+
+                if (!$firstProcess) {
+                    DB::rollBack();
+                    return ApiResponse::error('La regla no tiene procesos configurados', 400);
+                }
+
+                // 5. Asignar el proceso al caso
+                $case->current_process_id = $firstProcess->id;
+                $case->active = true;
+                $case->save();
+            }
+            // 6. Determinar qué modelo crear según el proceso
+            $modelClass = $firstProcess->model_class;
+            // 7. Crear el registro en el modelo correspondiente
+            $dataProccess = null;
+
+            switch ($modelClass) {
+                case 'App\\Models\\Penalty':
+                    $controller = new PenaltyController();
+                    if ($request->id > 0) {
+                        $latestHistory = AlcoholHistory::where("case_id", $case->id)
+                            ->orderByDesc('id')
+                            ->first();
+                        $modifiedData = $request->all();
+                        $modifiedData['id'] = $latestHistory->step_id;
+
+                        // Crear nuevo request
+                        $modifiedRequest = new Request($modifiedData);
+                        // Usar el request modificado
+                        $dataProccess = $controller->storeOrUpdate($modifiedRequest);
+                    } else {
+
+                        $dataProccess = $controller->storeOrUpdate($request);
+                    }
+                    break;
+
+                case 'App\\Models\\PublicSecurities':
+                    // ...
+                    return "aqui adentro 1";
+
+                    break;
+
+                case 'App\\Models\\Traffic':
+                    return "aqui adentro 2";
+
+                    $controller = new PenaltyController();
+                    if ($request->id > 0) {
+                        $latestHistory = AlcoholHistory::where("case_id", $case->id)
+                            ->orderByDesc('id')
+                            ->first();
+                        $modifiedData = $request->all();
+                        $modifiedData['id'] = $latestHistory->step_id;
+
+                        // Crear nuevo request
+                        $modifiedRequest = new Request($modifiedData);
+                        // Usar el request modificado
+                        $dataProccess = $controller->storeOrUpdate($modifiedRequest);
+                    } else {
+
+                        $dataProccess = $controller->storeOrUpdate($request);
+                    }
+                    break;
+
+                case 'App\\Models\\Court':
+                    return "aqui adentro 3";
+
+                    break;
+
+                default:
+                    DB::rollBack();
+                    return ApiResponse::error('Modelo no reconocido: ' . $modelClass, 400);
+            }
+
+
+            // 8. Guardar referencia al registro creado
+            // $case->current_process_record_type = $modelClass;
+            // $case->current_process_record_id = $record->id;
+            $case->save();
+            AlcoholHistory::create([
+                "case_id" => $case->id,
+                "process_id" => $firstProcess->pivot->process_id,
+                "user_id" => Auth::id(),
+                "step_id" => $dataProccess->id,
+
+            ]);
             if (!$case) {
                 return ApiResponse::error('Caso no encontrado', 404);
             }
@@ -278,6 +505,7 @@ class AlcoholProcessController extends Controller
                 }
 
                 $case->current_process_id = $processes->first()->id;
+
                 $case->save();
 
                 DB::commit();
@@ -296,14 +524,16 @@ class AlcoholProcessController extends Controller
 
             // Si es el último proceso
             if ($currentIndex === $processes->count() - 1) {
-                $case->active = false;
+                $case->finish = true;
                 $case->save();
-
                 DB::commit();
                 return ApiResponse::success($case, 'Caso completado (último proceso alcanzado)');
             }
 
             // Avanzar al siguiente proceso
+            // $case->active = true;
+            $case->requires_confirmation = true;
+
             $nextProcess = $processes[$currentIndex + 1];
             $case->current_process_id = $nextProcess->id;
             $case->save();

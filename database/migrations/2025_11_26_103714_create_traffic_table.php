@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('time')->nullable(); // String porque en TS lo usas como string
             $table->string('location')->nullable();
             $table->string('person_oficial')->nullable();
+            $table->string("image_traffic")->nullable();
             $table->boolean('active')->default(true);
 
             $table->timestamps();

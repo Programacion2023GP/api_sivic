@@ -22,7 +22,7 @@ class AlcoholCase extends Model
         'long',
         'lat',
         'residence_folio',
-
+        'finish'
     ];
      protected $casts = [
         'alcohol_level' => 'decimal:2',

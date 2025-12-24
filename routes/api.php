@@ -68,7 +68,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('penalties')->group(function () {
         Route::get('/index', [PenaltyController::class, 'index']);
-        Route::post('/historial', [PenaltyController::class, 'historial']);
+        Route::get('/historial/{id}', [PenaltyController::class, 'historial']);
         Route::get('/courts', [PenaltyController::class, 'courts']);
 
         
@@ -106,13 +106,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/createorUpdate', [AlcoholProcessController::class, 'store']);
         Route::get('/range', [AlcoholProcessController::class, 'getByAlcoholRange']);
         Route::get('/process/{processId}', [AlcoholProcessController::class, 'getByProcess']);
+        Route::post('/advance', [AlcoholProcessController::class, 'advance']);
     
-        Route::prefix('{id}')->group(function () {
-            Route::get('/', [AlcoholProcessController::class, 'show']);
-            Route::put('/', [AlcoholProcessController::class, 'update']);
-            Route::delete('/', [AlcoholProcessController::class, 'destroy']);
-            Route::post('/advance', [AlcoholProcessController::class, 'advance']);
-            Route::post('/confirm', [AlcoholProcessController::class, 'confirm']);
-        });
+        // Route::prefix('{id}')->group(function () {
+        //     Route::get('/', [AlcoholProcessController::class, 'show']);
+        //     Route::put('/', [AlcoholProcessController::class, 'update']);
+        //     Route::delete('/', [AlcoholProcessController::class, 'destroy']);
+        //     Route::post('/confirm', [AlcoholProcessController::class, 'confirm']);
+        // });
     });
 });

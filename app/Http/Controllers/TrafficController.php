@@ -27,36 +27,12 @@ class TrafficController extends Controller
             }
 
             // Asignar campos manualmente
-            $traffic->citizen_name = $request->citizen_name;
-            $traffic->age = $request->age;
-            $traffic->rank = $request->rank;
-            $traffic->plate_number = $request->plate_number;
+         
             $traffic->vehicle_brand = $request->vehicle_brand;
-            $traffic->time = $request->time;
-            $traffic->location = $request->location;
-            $traffic->person_oficial = $request->person_oficial;
+       
             // $traffic->active = $request->active ?? 1;
-            $data = $request->all();
 
-            if ($request->hasFile('image_traffic') && $request->file('image_traffic')->isValid()) {
-                $firma = $request->file('image_traffic');
-                $dirPath = "presidencia/SIVIC/traffic/evidence";
-
-                $imagePath = $this->ImgUpload(
-                    $firma,
-                    $request->citizen_name,
-                    $dirPath,
-                    $request->citizen_name
-                );
-
-                $traffic->image_traffic = "https://api.gpcenter.gomezpalacio.gob.mx/" .
-                    $dirPath . "/" . $request->citizen_name . "/" . $imagePath;
-            } else {
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['image_traffic']) && str_contains($data['image_traffic'], 'Temp\\php')) {
-                    unset($data['image_traffic']);
-                }
-            }
+        
             $traffic->save();
 
             $message = $request->id > 0 

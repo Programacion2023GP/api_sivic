@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('traffic', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable()->constrained('users'); // o después del campo que prefieras
+            $table->foreignId('created_by')->nullable(); // o después del campo que prefieras
+
+            // $table->foreignId('created_by')->nullable()->constrained('users'); // o después del campo que prefieras
         });
     }
 
