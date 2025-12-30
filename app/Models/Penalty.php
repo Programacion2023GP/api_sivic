@@ -14,6 +14,8 @@ class Penalty extends Model
         
         'images_evidences',
         'images_evidences_car',
+        'exit_reason',
+        'fine_amount',
         // 'person_contraloria',
         // 'oficial_payroll',
         // 'person_oficial',
@@ -38,6 +40,9 @@ class Penalty extends Model
         'image_penaltie',
         'updated_at',
         'created_by',
+        'vehicle_brand',
+        'detention_reason',
+        'patrol_unit_number',
         'active'
     ];
 
