@@ -13,7 +13,10 @@ use App\Http\Controllers\CourtController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PublicSecuritiesController;
+use App\Http\Controllers\ReportResidencesController;
 use App\Http\Controllers\ReportsCalendaryController;
+use App\Http\Controllers\SeguimientoAlcoholController;
+use App\Http\Controllers\SenderController;
 use App\Http\Controllers\TrafficController;
 use App\Models\Publicsecurities;
 
@@ -45,6 +48,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/index', [CauseOfDetentionController::class, 'index']);
         Route::post('/createorUpdate', [CauseOfDetentionController::class, 'createorUpdate']);
         Route::delete('/delete', [CauseOfDetentionController::class, 'destroy']);
+    });
+    Route::prefix('/sender')->group(function () {
+        Route::get('/index', [SenderController::class, 'index']);
+        Route::post('/createorUpdate', [SenderController::class, 'createorUpdate']);
+        Route::delete('/delete', [SenderController::class, 'destroy']);
     });
     Route::prefix('/doctor')->group(function () {
         Route::get('/index', [DoctorController::class, 'index']);
@@ -107,12 +115,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/range', [AlcoholProcessController::class, 'getByAlcoholRange']);
         Route::get('/process/{processId}', [AlcoholProcessController::class, 'getByProcess']);
         Route::post('/advance', [AlcoholProcessController::class, 'advance']);
-    
+        Route::post('/show', [AlcoholProcessController::class, 'show']);
+
         // Route::prefix('{id}')->group(function () {
         //     Route::get('/', [AlcoholProcessController::class, 'show']);
         //     Route::put('/', [AlcoholProcessController::class, 'update']);
         //     Route::delete('/', [AlcoholProcessController::class, 'destroy']);
         //     Route::post('/confirm', [AlcoholProcessController::class, 'confirm']);
         // });
+    });
+
+    Route::prefix('reportsrecidences')->group(function () {
+        Route::get('/index', [ReportResidencesController::class, 'index']);
+       
+        // Route::post('/historial', [PenaltyController::class, 'historial']);
+        // Route::get('/courts', [PenaltyController::class, 'courts']);
+
+
+    });
+    Route::prefix('seguimiento')->group(function () {
+        Route::post('/seguimiento', [SeguimientoAlcoholController::class, 'seguimiento']);
+
+        // Route::post('/historial', [PenaltyController::class, 'historial']);
+        // Route::get('/courts', [PenaltyController::class, 'courts']);
+
+
     });
 });

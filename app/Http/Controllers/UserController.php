@@ -164,8 +164,11 @@ $token = $user->createToken('auth_token', $permisos->toArray())->plainTextToken;
             $users = User::where('payroll', '!=', '000000')
                 ->leftJoin('user_permissions', 'users.id', '=', 'user_permissions.user_id')
                 ->leftJoin('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+                ->leftJoin('dependences', 'dependences.id', '=', 'users.dependence_id')
+
                 ->select(
                     'users.*',
+                    'dependences.name as departament',
                     DB::raw('GROUP_CONCAT(permissions.id) as permission_ids')
                 )
                 ->groupBy('users.id')

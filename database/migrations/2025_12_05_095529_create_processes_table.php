@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('model_class')->nullable(); // "App\Models\Recepcion"
             $table->integer('orden')->default(0);
+        
             $table->boolean('active')->default(true);
             $table->timestamps();
         });

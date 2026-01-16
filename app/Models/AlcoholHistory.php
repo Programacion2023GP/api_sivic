@@ -13,5 +13,7 @@ class AlcoholHistory extends Model
         'process_id',
         'user_id',
         'step_id',
+        'observation',
+        'action'
     ];
 }

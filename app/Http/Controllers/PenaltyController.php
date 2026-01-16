@@ -28,11 +28,11 @@ class PenaltyController extends Controller
             $query = PenaltyView::query();
 
             // Aplicar filtros según el rol
-            if ($userRole === 'director') {
-                $query->where('user_dependence_id', $userDependenceId);
-            } elseif ($userRole === 'usuario') {
-                $query->where('created_by', $user->id)->where('active', 1);
-            }
+            // if ($userRole === 'director') {
+            //     $query->where('user_dependence_id', $userDependenceId);
+            // } elseif ($userRole === 'usuario') {
+            //     $query->where('created_by', $user->id)->where('active', 1);
+            // }
             // Sistemas y administrativo no necesitan filtros
 
             $penalties = $query->orderBy('id', 'desc')->get();
@@ -104,6 +104,11 @@ class PenaltyController extends Controller
     public function storeOrUpdate(Request $request)
     {
         try {
+            // DEPURACIÓN DETALLADA AL INICIO
+            Log::info('=== INICIO DEPURACIÓN storeOrUpdate ===');
+            Log::info('Content-Type header:', ['content-type' => $request->headers->get('Content-Type')]);
+            Log::info('Método HTTP:', ['method' => $request->method()]);
+
             $data = $request->all();
             Log::info('Datos recibidos en storeOrUpdate:', $data);
 
@@ -114,143 +119,119 @@ class PenaltyController extends Controller
             $penaltyPreloadData = $penaltyPreloadDataController->storeOrUpdate($request);
             Log::info('PenaltyPreloadData creado/actualizado:', ['id' => $penaltyPreloadData->id]);
 
-            // Ahora $penaltyPreloadData es un modelo, no un JsonResponse
             $data["penalty_preload_data_id"] = $penaltyPreloadData->id;
 
-            // Verificar si hay archivos en la solicitud
-            Log::info('Verificación de archivos en la solicitud:');
-            Log::info('image_penaltie presente:', [
-                'hasFile' => $request->hasFile('image_penaltie'),
-                'allFiles' => $request->allFiles(), // Ver TODOS los archivos recibidos
-                'allInput' => $request->all() // Ver TODOS los datos recibidos
-            ]);
+            Log::info('=== VERIFICANDO ARCHIVOS ===');
 
-            // También verifica si viene como base64 o binary
-            Log::info('Headers:', ['headers' => $request->headers->all()]);
-            Log::info('Content-Type:', ['type' => $request->headers->get('Content-Type')]);
+            // FUNCIÓN PARA PROCESAR ARCHIVOS
+            $processFile = function ($fieldName, $dirPath, $filenamePrefix = null) use ($request, &$data) {
+                $fileDetected = false;
+                $file = null;
 
-            if ($request->hasFile('image_penaltie')) {
-                $file = $request->file('image_penaltie');
-                Log::info('Archivo image_penaltie detectado:', [
-                    'nombre' => $file->getClientOriginalName(),
-                    'tamaño' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                    'válido' => $file->isValid()
-                ]);
-
-                if ($file->isValid()) {
-                    $dirPath = "presidencia/SIVIC/multas";
-                    Log::info('Subiendo image_penaltie a directorio: ' . $dirPath);
-
-                    $imagePath = $this->ImgUpload(
-                        $file,
-                        $request->curp,
-                        $dirPath,
-                        $request->curp
-                    );
-
-                    Log::info('image_penaltie subido exitosamente:', ['path' => $imagePath]);
-                    $data['active'] = true;
-
-                    // Store the complete URL in the data array
-                    $fullUrl = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-                    $data['image_penaltie'] = $fullUrl;
-                    Log::info('URL completa de image_penaltie:', ['url' => $fullUrl]);
-                } else {
-                    Log::warning('Archivo image_penaltie no es válido');
+                // Verifica de 3 maneras diferentes
+                // 1. Usando $request->hasFile() (forma estándar)
+                if ($request->hasFile($fieldName)) {
+                    Log::info("Método 1: \$request->hasFile detectó {$fieldName}");
+                    $file = $request->file($fieldName);
+                    $fileDetected = true;
                 }
-            } else {
-                Log::info('No se detectó archivo image_penaltie en la solicitud');
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['image_penaltie'])) {
-                    Log::info('Valor actual de image_penaltie en data:', ['value' => $data['image_penaltie']]);
-                    if (str_contains($data['image_penaltie'], 'Temp\\php')) {
-                        Log::info('Eliminando ruta temporal de image_penaltie');
-                        unset($data['image_penaltie']);
+                // 2. Verificando en $data
+                else if (isset($data[$fieldName]) && $data[$fieldName] instanceof \Illuminate\Http\UploadedFile) {
+                    Log::info("Método 2: {$fieldName} encontrado como UploadedFile en \$data");
+                    $file = $data[$fieldName];
+                    $fileDetected = true;
+                }
+                // 3. Verificando en $request->allFiles()
+                else if ($request->allFiles() && isset($request->allFiles()[$fieldName])) {
+                    Log::info("Método 3: {$fieldName} encontrado en \$request->allFiles()");
+                    $file = $request->allFiles()[$fieldName];
+                    $fileDetected = true;
+                }
+
+                // Si se detectó el archivo, procesarlo
+                if ($fileDetected && isset($file)) {
+                    Log::info("Archivo {$fieldName} detectado:", [
+                        'nombre' => $file->getClientOriginalName(),
+                        'tamaño' => $file->getSize(),
+                        'mime' => $file->getMimeType(),
+                        'válido' => $file->isValid(),
+                        'error' => $file->getError(),
+                        'path_temporal' => $file->getPathname()
+                    ]);
+
+                    if ($file->isValid()) {
+                        Log::info("Subiendo {$fieldName} a directorio: {$dirPath}");
+
+                        // Asegurarse de que tenemos CURP
+                        $curp = $request->curp ?? $data['curp'] ?? 'unknown_' . time();
+
+                        // Usar prefijo personalizado si se proporciona
+                        $filename = $filenamePrefix ? "{$filenamePrefix}_{$curp}" : $curp;
+
+                        $imagePath = $this->ImgUpload(
+                            $file,
+                            $curp,
+                            $dirPath,
+                            $filename
+                        );
+
+                        Log::info("{$fieldName} subido exitosamente:", ['path' => $imagePath]);
+
+                        // Store the complete URL in the data array
+                        $fullUrl = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $curp . "/" . $imagePath;
+                        $data[$fieldName] = $fullUrl;
+                        Log::info("URL completa de {$fieldName}:", ['url' => $fullUrl]);
+
+                        // Asegurarse de que el archivo temporal se elimine
+                        if (file_exists($file->getPathname())) {
+                            unlink($file->getPathname());
+                        }
+
+                        return true;
+                    } else {
+                        Log::warning("Archivo {$fieldName} no es válido", [
+                            'error' => $file->getError(),
+                            'error_message' => $file->getErrorMessage()
+                        ]);
+                        return false;
                     }
-                }
-            }
-
-            if ($request->hasFile('images_evidences')) {
-                $file = $request->file('images_evidences');
-                Log::info('Archivo images_evidences detectado:', [
-                    'nombre' => $file->getClientOriginalName(),
-                    'tamaño' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                    'válido' => $file->isValid()
-                ]);
-
-                if ($file->isValid()) {
-                    $dirPath = "presidencia/SIVIC/evidences";
-                    Log::info('Subiendo images_evidences a directorio: ' . $dirPath);
-
-                    $imagePath = $this->ImgUpload(
-                        $file,
-                        $request->curp,
-                        $dirPath,
-                        $request->curp
-                    );
-
-                    Log::info('images_evidences subido exitosamente:', ['path' => $imagePath]);
-
-                    // Store the complete URL in the data array
-                    $fullUrl = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-                    $data['images_evidences'] = $fullUrl;
-                    Log::info('URL completa de images_evidences:', ['url' => $fullUrl]);
                 } else {
-                    Log::warning('Archivo images_evidences no es válido');
-                }
-            } else {
-                Log::info('No se detectó archivo images_evidences en la solicitud');
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['images_evidences'])) {
-                    Log::info('Valor actual de images_evidences en data:', ['value' => $data['images_evidences']]);
-                    if (str_contains($data['images_evidences'], 'Temp\\php')) {
-                        Log::info('Eliminando ruta temporal de images_evidences');
-                        unset($data['images_evidences']);
+                    Log::info("No se detectó archivo {$fieldName} en ningún método");
+
+                    // Si hay una ruta temporal o objeto, eliminarlo del array
+                    if (isset($data[$fieldName])) {
+                        Log::info("Valor actual de {$fieldName} en data:", [
+                            'type' => gettype($data[$fieldName]),
+                            'value' => $data[$fieldName]
+                        ]);
+
+                        // Eliminar si es una ruta temporal o un objeto UploadedFile
+                        if (is_string($data[$fieldName]) && str_contains($data[$fieldName], 'Temp\\php')) {
+                            Log::info("Eliminando ruta temporal de {$fieldName}");
+                            unset($data[$fieldName]);
+                        } else if (is_array($data[$fieldName]) || is_object($data[$fieldName])) {
+                            Log::info("Eliminando objeto/array de {$fieldName} que no es archivo válido");
+                            unset($data[$fieldName]);
+                        }
                     }
+                    return false;
                 }
-            }
+            };
 
-            if ($request->hasFile('images_evidences_car')) {
-                $file = $request->file('images_evidences_car');
-                Log::info('Archivo images_evidences_car detectado:', [
-                    'nombre' => $file->getClientOriginalName(),
-                    'tamaño' => $file->getSize(),
-                    'mime' => $file->getMimeType(),
-                    'válido' => $file->isValid()
-                ]);
+            // PROCESAR LOS 3 ARCHIVOS
+            Log::info('--- Procesando image_penaltie ---');
+            $processFile('image_penaltie', 'presidencia/SIVIC/multas');
 
-                if ($file->isValid()) {
-                    $dirPath = "presidencia/SIVIC/evidences";
-                    Log::info('Subiendo images_evidences_car a directorio: ' . $dirPath);
+            Log::info('--- Procesando images_evidences ---');
+            $processFile('images_evidences', 'presidencia/SIVIC/evidences');
 
-                    $imagePath = $this->ImgUpload(
-                        $file,
-                        $request->curp,
-                        $dirPath,
-                        "car_$request->curp"
-                    );
+            Log::info('--- Procesando images_evidences_car ---');
+            $processFile('images_evidences_car', 'presidencia/SIVIC/evidences', 'car');
 
-                    Log::info('images_evidences_car subido exitosamente:', ['path' => $imagePath]);
-
-                    // Store the complete URL in the data array
-                    $fullUrl = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->curp . "/" . $imagePath;
-                    $data['images_evidences_car'] = $fullUrl;
-                    Log::info('URL completa de images_evidences_car:', ['url' => $fullUrl]);
-                } else {
-                    Log::warning('Archivo images_evidences_car no es válido');
-                }
-            } else {
-                Log::info('No se detectó archivo images_evidences_car en la solicitud');
-                // Si no hay archivo nuevo, eliminar la ruta temporal para no guardarla
-                if (isset($data['images_evidences_car'])) {
-                    Log::info('Valor actual de images_evidences_car en data:', ['value' => $data['images_evidences_car']]);
-                    if (str_contains($data['images_evidences_car'], 'Temp\\php')) {
-                        Log::info('Eliminando ruta temporal de images_evidences_car');
-                        unset($data['images_evidences_car']);
-                    }
-                }
+            // Activar registro si se subió al menos un archivo
+            if (isset($data['image_penaltie']) || isset($data['images_evidences']) || isset($data['images_evidences_car'])) {
+                $data['active'] = true;
+                Log::info('Registro activado porque hay al menos un archivo subido');
             }
 
             // Verificar datos antes de crear/actualizar
@@ -263,6 +244,7 @@ class PenaltyController extends Controller
                 $penalty = Penalty::findOrFail($data['id']);
                 Log::info('Penalty encontrado para actualizar:', ['penalty' => $penalty->toArray()]);
 
+                // Actualizar solo si tenemos cambios
                 $penalty->update($data);
                 $message = 'Multa actualizada correctamente';
                 $statusCode = 200;
@@ -279,6 +261,8 @@ class PenaltyController extends Controller
             }
 
             Log::info('Resultado final:', ['penalty_id' => $penalty->id, 'status' => $statusCode]);
+            Log::info('=== FIN DEPURACIÓN storeOrUpdate ===');
+
             return $penalty;
         } catch (\Throwable $e) {
             Log::error('Error en storeOrUpdate:', [

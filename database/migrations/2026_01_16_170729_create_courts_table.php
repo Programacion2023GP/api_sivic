@@ -14,12 +14,16 @@ return new class extends Migration
         Schema::create('courts', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->string('referring_agency'); // remite
+            $table->foreignId('referring_agency')
+                ->constrained('senders')
+                ->onDelete('cascade');
             $table->string('detainee_name'); // nombre del detenido
             $table->text('detention_reason'); // motivo de detención
             $table->time('entry_time'); // hora de entrada
             $table->dateTime('exit_datetime')->nullable(); // hora y fecha de salida
-            $table->string('exit_reason')->nullable(); // causa de salida
+            $table->foreignId('exit_reason')
+                ->constrained('causeOfDetention')
+                ->onDelete('cascade');
             $table->decimal('fine_amount', 10, 2)->nullable(); // multa
             $table->boolean('active')->default(true);
 
@@ -27,11 +31,9 @@ return new class extends Migration
             $table->foreignId('created_by')
                 ->constrained('users')
                 ->onDelete('cascade');
-            $table->foreignId('penalties_id')
-                ->nullable()  
-                ->constrained('penalties')
-                ->onDelete('cascade');
+        
             $table->timestamps();
+            $table->string("image_court")->nullable();
         });
     }
 

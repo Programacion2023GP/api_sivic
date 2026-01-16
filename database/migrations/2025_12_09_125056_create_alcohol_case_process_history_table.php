@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('process_id');   // processes.id
             $table->unsignedBigInteger('user_id')->nullable(); // quién completó el paso
             $table->unsignedBigInteger('step_id');   // processes.id
-
+            
             $table->timestamps();
         });
     }

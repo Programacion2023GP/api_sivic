@@ -20,7 +20,6 @@ class Court extends Model
         'created_at',
         'updated_at',
         'active',
-        'penalties_id',
         'created_by',
         'image_court',
     ];

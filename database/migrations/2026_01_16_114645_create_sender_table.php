@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('courts', function (Blueprint $table) {
-            //
-            $table->string("image_court")->nullable();
+        Schema::create('senders', function (Blueprint $table) {
+            $table->id();
+            $table->string("name");
+            $table->boolean('active')->default(true);
+            $table->timestamps();
         });
     }
 
@@ -22,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('courts', function (Blueprint $table) {
-            $table->dropColumn('image_court');
-        });
+        Schema::dropIfExists('senders');
     }
 };

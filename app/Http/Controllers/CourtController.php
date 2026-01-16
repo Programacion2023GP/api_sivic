@@ -27,7 +27,6 @@ class CourtController extends Controller
             // Rellenamos solo los campos permitidos ($fillable)
             $court->fill($request->only([
                 'date',
-                'penalties_id',
                 'referring_agency',
                 'detainee_name',
                 'detention_reason',
