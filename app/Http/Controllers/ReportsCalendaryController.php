@@ -19,19 +19,19 @@ class ReportsCalendaryController extends Controller
             $result = collect();
 
             // Tráfico
-            $traffic = Traffic::where("active", 1)->get();
+            $traffic = PenaltyView::where("active", 1)->where("current_process_id",1)->get();
             $this->addToCollection($result, $traffic, 'Transito Vialidad');
 
             // Alcolímetro
-            $penaltyView = PenaltyView::where("active", 1)->get();
+            $penaltyView = PenaltyView::where("active", 1)->where("current_process_id",2)->get();
             $this->addToCollection($result, $penaltyView, 'Alcolimetro');
 
             // Seguridad pública
-            $publicsecurities = Publicsecurities::where("active", 1)->get();
+            $publicsecurities = PenaltyView::where("active", 1)->where("current_process_id",3)->get();
             $this->addToCollection($result, $publicsecurities, 'Seguridad publica');
 
             // Juzgados
-            $court = Court::where("active", 1)->get();
+            $court = PenaltyView::where("active", 1)->where("current_process_id",4)->get();
             $this->addToCollection($result, $court, 'Juzgados');
 
             return ApiResponse::success($result->values()->all(), 'Registros combinados recuperados correctamente');
