@@ -35,7 +35,7 @@ class PenaltyController extends Controller
             // }
             // Sistemas y administrativo no necesitan filtros
 
-            $penalties = $query->orderBy('id', 'desc')->get();
+            $penalties = $query->where("active",1)->orderBy('id', 'desc')->get();
 
             return response()->json([
                 'status' => 'success',
@@ -339,9 +339,10 @@ class PenaltyController extends Controller
     /**
      * Eliminar multa
      */
-    public function destroy($id)
+    public function destroy($penalties_id)
     {
-        $penalty = Penalty::findOrFail($id);
+        
+        $penalty = Penalty::where("id", $penalties_id);
         $penalty->delete();
 
         return response()->json([

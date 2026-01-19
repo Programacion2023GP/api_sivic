@@ -76,7 +76,7 @@ class CourtController extends Controller
             return response()->json([
                 'status' => "error",
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' =>"ocurrio un error"
             ], 500);
         }
     }

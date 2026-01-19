@@ -18,10 +18,10 @@ return new class extends Migration
                 ->constrained('senders')
                 ->onDelete('cascade');
             $table->string('detainee_name'); // nombre del detenido
-            $table->text('detention_reason'); // motivo de detención
+            $table->text('exit_reason'); 
             $table->time('entry_time'); // hora de entrada
             $table->dateTime('exit_datetime')->nullable(); // hora y fecha de salida
-            $table->foreignId('exit_reason')
+            $table->foreignId('detention_reason') // motivo de detención
                 ->constrained('causeOfDetention')
                 ->onDelete('cascade');
             $table->decimal('fine_amount', 10, 2)->nullable(); // multa
