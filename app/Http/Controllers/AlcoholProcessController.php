@@ -73,7 +73,7 @@ class AlcoholProcessController extends Controller
                         'person_oficial' => $request->person_oficial ?? $case->person_oficial,
                         'plate_number' => $request->plate_number ?? $case->plate_number,
                         'age' => $request->age ?? $case->age,
-                        'long' => $request->long ?? $case->long,
+                        'lon' => $request->lon ?? $case->lon,
                         'lat' => $request->lat ?? $case->lat,
                         'date' => $request->date ?? $case->date,
                         'time' => $request->time ?? $case->time,
