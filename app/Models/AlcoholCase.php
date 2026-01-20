@@ -19,7 +19,7 @@ class AlcoholCase extends Model
         'date',
         'plate_number',
         'age',
-        'long',
+        'lon',
         'lat',
         'residence_folio',
         'finish',
