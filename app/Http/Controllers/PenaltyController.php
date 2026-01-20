@@ -306,12 +306,12 @@ class PenaltyController extends Controller
         try {
 
 
-            $penalty = Penalty::findOrFail($request->id);
+            $penalty = Penalty::findOrFail($request->penalties_id);
 
             // Solo proceder si el CURP es válido
             // if (!empty($request->curp) && trim($request->curp) !== '') {
             // Desactivar todas las multas con el mismo CURP (excluyendo null/vacíos)
-            $updated = Penalty::where('id', $request->id)
+            $updated = Penalty::where('id', $request->penalties_id)
                 ->update(['active' => DB::raw('NOT active')]);
             return response()->json([
                 'success' => true,
