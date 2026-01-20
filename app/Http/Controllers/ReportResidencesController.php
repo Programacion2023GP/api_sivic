@@ -21,6 +21,8 @@ class ReportResidencesController extends Controller
     ac.name as Nombre
 FROM alcohol_cases as ac 
 LEFT JOIN alcohol_cases as c ON ac.id = c.residence_folio 
+INNER JOIN showPenalties as s ON s.id = ac.id 
+
 GROUP BY ac.id, ac.name
 HAVING FoliosReincidencias IS NOT NULL 
    AND FoliosReincidencias != ''"
