@@ -14,6 +14,7 @@ class Penalty extends Model
         
         'images_evidences',
         'images_evidences_car',
+        'image_penaltie_money',
         'exit_reason',
         'fine_amount',
         // 'person_contraloria',
