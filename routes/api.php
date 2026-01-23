@@ -142,3 +142,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     });
 });
+Route::get('/test-log', function () {
+    \Log::info('Test log message', ['data' => 'test']);
+
+    // Verifica el archivo directamente
+    $logPath = storage_path('logs/laravel.log');
+    return response()->json([
+        'log_file_exists' => file_exists($logPath),
+        'log_file_writable' => is_writable($logPath),
+        'log_file_size' => file_exists($logPath) ? filesize($logPath) : 0,
+        'log_path' => $logPath
+    ]);
+});
