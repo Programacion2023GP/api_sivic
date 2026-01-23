@@ -15,16 +15,15 @@ class ReportResidencesController extends Controller
         try {
             $traffic = \DB::select(
                 "SELECT 
-    COUNT(ac.id) as recidencias,
-    GROUP_CONCAT(c.id ORDER BY c.id SEPARATOR ', ') as FoliosReincidencias,
+    COUNT(DISTINCT c.id) as recidencias,
+    GROUP_CONCAT(DISTINCT c.id ORDER BY c.id SEPARATOR ', ') as FoliosReincidencias,
     MAX(ac.id) as UltimoFolio,
     ac.name as Nombre
 FROM alcohol_cases as ac 
 LEFT JOIN alcohol_cases as c ON ac.id = c.residence_folio 
 INNER JOIN showPenalties as s ON s.id = ac.id 
-
 GROUP BY ac.id, ac.name
-HAVING FoliosReincidencias IS NOT NULL 
+HAVING FoliosReincidencias IS NOT NULL
    AND FoliosReincidencias != ''"
             );
 
