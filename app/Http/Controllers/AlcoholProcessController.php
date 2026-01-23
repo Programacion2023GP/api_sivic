@@ -527,6 +527,8 @@ class AlcoholProcessController extends Controller
                 return ApiResponse::success($case, 'Caso ya finalizado - Registro histórico creado');
             }
 
+            
+
             // Si es el último proceso
             if ($currentIndex === $processes->count() - 1) {
                 $case->finish = true;
