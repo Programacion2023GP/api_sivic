@@ -105,9 +105,9 @@ class PenaltyController extends Controller
 {
     try {
         $data = $request->all();
-
-      
-
+            $penaltyPreloadDataController = new PenaltyPreloadDataController();
+            $penaltyPreloadData = $penaltyPreloadDataController->storeOrUpdate($request);
+            $data["penalty_preload_data_id"] = $penaltyPreloadData->id;
         // Convert boolean strings to actual booleans/integers
         $data = $this->convertBooleanStrings($data);
 
