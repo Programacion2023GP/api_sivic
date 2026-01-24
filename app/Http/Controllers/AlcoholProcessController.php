@@ -137,6 +137,31 @@ class AlcoholProcessController extends Controller
                 case 'App\\Models\\PublicSecurities':
                 case 'App\\Models\\Court':
                     $controller = new PenaltyController();
+                    $modifiedRequest = new Request(
+                        $request->all(),
+                        $request->query->all(),
+                        $request->attributes->all(),
+                        $request->cookies->all(),
+                        $request->files->all(), // ¡Mantener archivos!
+                        $request->server->all(),
+                        $request->getContent()
+                    );
+
+                    // También copiar los archivos específicos
+                    if ($request->hasFile('image_penaltie_money')) {
+                        $modifiedRequest->files->set('image_penaltie_money', $request->file('image_penaltie_money'));
+                    }
+                    if ($request->hasFile('image_penaltie')) {
+                        $modifiedRequest->files->set('image_penaltie', $request->file('image_penaltie'));
+                    }
+                    if ($request->hasFile('images_evidences')) {
+                        $modifiedRequest->files->set('images_evidences', $request->file('images_evidences'));
+                    }
+                    if ($request->hasFile('images_evidences_car')) {
+                        $modifiedRequest->files->set('images_evidences_car', $request->file('images_evidences_car'));
+                    }
+
+                    $response = $controller->storeOrUpdate($modifiedRequest);
                     if ($request->id > 0) {
                         // PARA ACTUALIZACIÓN: Encontrar el historial más reciente
                         $latestHistory = AlcoholHistory::where("case_id", $case->id)
@@ -144,9 +169,7 @@ class AlcoholProcessController extends Controller
                             ->first();
 
                         if ($latestHistory) {
-                            $modifiedData = $request->all();
-                            $modifiedData['id'] = $latestHistory->step_id;
-                            $modifiedRequest = new Request($modifiedData);
+                            $modifiedRequest['id'] = $latestHistory->step_id;
                             $dataProccess = $controller->storeOrUpdate($modifiedRequest);
                             $stepId = $dataProccess->id;
 
@@ -154,12 +177,12 @@ class AlcoholProcessController extends Controller
 
                         } else {
                             // Si no hay historial previo, crear uno nuevo
-                            $dataProccess = $controller->storeOrUpdate($request);
+                            $dataProccess = $controller->storeOrUpdate($modifiedRequest);
                             $stepId = $dataProccess->id;
                         }
                     } else {
                         // PARA NUEVO REGISTRO
-                        $dataProccess = $controller->storeOrUpdate($request);
+                        $dataProccess = $controller->storeOrUpdate($modifiedRequest);
                         $stepId = $dataProccess->id;
 
                         // CREAR REGISTRO EN EL HISTORIAL
@@ -394,7 +417,8 @@ class AlcoholProcessController extends Controller
                 case 'App\\Models\\Court':
                     $controller = new PenaltyController();
                     $response = null;
-
+                    $idStep = 0;
+                    Log::info("id del alcohol case",$request->all());
                     if ($request->id > 0) {
                         $latestHistory = AlcoholHistory::where("case_id", $case->id)
                             ->orderByDesc('id')
@@ -430,36 +454,33 @@ class AlcoholProcessController extends Controller
                         }
 
                         $response = $controller->storeOrUpdate($modifiedRequest);
+                        $idStep = $response['id'];
+                      
                     } else {
                         $response = $controller->storeOrUpdate($request);
+                        $idStep = $response['id'];
+                     
                     }
 
-                    // Verificar respuesta y obtener el ID
-
+                   
+                    $modifiedData['id'] = $idStep;
                     if ($request->id > 0) {
                         // PARA ACTUALIZACIÓN: Encontrar el historial más reciente
-                        $latestHistory = AlcoholHistory::where("case_id", $case->id)
-                            ->orderByDesc('id')
-                            ->first();
 
                         if ($latestHistory) {
-                            $modifiedData = $request->all();
-                            $modifiedData['id'] = $latestHistory->step_id;
-                            $modifiedRequest = new Request($modifiedData);
-                            $dataProccess = $controller->storeOrUpdate($modifiedRequest);
-                            $stepId = $dataProccess->id;
+                           
+                           
+                            $stepId =  $modifiedData['id'];
 
                             // CREAR NUEVO REGISTRO EN EL HISTORIAL para la actualización
 
                         } else {
                             // Si no hay historial previo, crear uno nuevo
-                            $dataProccess = $controller->storeOrUpdate($request);
-                            $stepId = $dataProccess->id;
+                            $stepId =  $modifiedData['id'];
                         }
                     } else {
                         // PARA NUEVO REGISTRO
-                        $dataProccess = $controller->storeOrUpdate($request);
-                        $stepId = $dataProccess->id;
+                        $stepId =  $modifiedData['id'];
 
                         // CREAR REGISTRO EN EL HISTORIAL
 
@@ -527,7 +548,7 @@ class AlcoholProcessController extends Controller
                 return ApiResponse::success($case, 'Caso ya finalizado - Registro histórico creado');
             }
 
-            
+
 
             // Si es el último proceso
             if ($currentIndex === $processes->count() - 1) {
