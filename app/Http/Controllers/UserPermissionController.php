@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\UserPermission;
-use App\Helpers\ApiResponse;
+
 use Illuminate\Support\Facades\Validator;
 
 class UserPermissionController extends Controller
