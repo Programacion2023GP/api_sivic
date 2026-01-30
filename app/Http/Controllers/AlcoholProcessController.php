@@ -192,7 +192,7 @@ class AlcoholProcessController extends Controller
 
                 default:
                     DB::rollBack();
-                    return ApiResponse::error('Modelo no reconocido: ' . $modelClass, 400);
+                    return ApiResponse::error('Modelo no reconocido:', 400);
             }
 
             // Actualizar el ID del paso actual en el caso
@@ -571,7 +571,7 @@ class AlcoholProcessController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("ERROR EN advance: " . $e->getMessage() . "\n" . $e->getTraceAsString());
-            return ApiResponse::error('Error al avanzar el caso: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Error al avanzar el caso', 500);
         }
     }
 

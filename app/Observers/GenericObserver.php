@@ -24,7 +24,7 @@ class GenericObserver
                 'http_method' => request()->method(),
             ]);
         } catch (\Throwable $e) {
-            \Log::error('❌ Error al guardar log: ' . $e->getMessage());
+            \Log::error('❌ Error al guardar log: ');
         }
     }
 

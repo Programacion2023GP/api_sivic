@@ -62,12 +62,12 @@ abstract class Controller
 
             // Check response status
             if ($response->getStatusCode() !== 200) {
-                throw new \Exception('Error al subir la imagen: ' . $response->getBody());
+                throw new \Exception('Error al subir la imagen: ' );
             }
 
             return $response;
         } catch (\Exception $e) {
-            throw new \Exception('Error en uploadToMicroservice: ' . $e->getMessage());
+            throw new \Exception('Error en uploadToMicroservice: ' );
         }
     }
 }
