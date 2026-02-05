@@ -10,6 +10,7 @@ use App\Models\Penalty;
 use App\Models\PenaltyView;
 use Illuminate\Support\Facades\Log;
 use App\Models\Process;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -325,6 +326,7 @@ class AlcoholProcessController extends Controller
     public function advance(Request $request)
     {
         try {
+            $errors = [];
             DB::beginTransaction();
 
             // 1. Determinar el nivel de alcohol y encontrar la regla
@@ -411,7 +413,6 @@ class AlcoholProcessController extends Controller
             // 4. Determinar qué modelo crear según el proceso y crear el registro
             $modelClass = $firstProcess->model_class;
             $stepId = null; // Variable para almacenar el ID del registro creado
-
             switch ($modelClass) {
                 case 'App\\Models\\Penalty':
                 case 'App\\Models\\Traffic':
@@ -420,7 +421,6 @@ class AlcoholProcessController extends Controller
                     $controller = new PenaltyController();
                     $response = null;
                     $idStep = 0;
-                    Log::info("id del alcohol case",$request->all());
                     if ($request->id > 0) {
                         $latestHistory = AlcoholHistory::where("case_id", $case->id)
                             ->orderByDesc('id')
@@ -457,21 +457,23 @@ class AlcoholProcessController extends Controller
 
                         $response = $controller->storeOrUpdate($modifiedRequest);
                         $idStep = $response['id'];
-                      
+
+                       
                     } else {
                         $response = $controller->storeOrUpdate($request);
                         $idStep = $response['id'];
-                     
+                       
                     }
 
-                   
+                    Log::info("errors :", $errors);
+
                     $modifiedData['id'] = $idStep;
                     if ($request->id > 0) {
                         // PARA ACTUALIZACIÓN: Encontrar el historial más reciente
 
                         if ($latestHistory) {
-                           
-                           
+
+
                             $stepId =  $modifiedData['id'];
 
                             // CREAR NUEVO REGISTRO EN EL HISTORIAL para la actualización
@@ -488,11 +490,11 @@ class AlcoholProcessController extends Controller
 
                     }
 
-                        if (!$stepId) {
-                            DB::rollBack();
-                            return ApiResponse::error('No se pudo obtener el ID del registro creado', 400);
-                        }
-                    
+                    if (!$stepId) {
+                        DB::rollBack();
+                        return ApiResponse::error('No se pudo obtener el ID del registro creado', 400);
+                    }
+
                     break;
 
                 default:
@@ -512,7 +514,19 @@ class AlcoholProcessController extends Controller
                 ->exists();
 
             $action = $existsCurrent ? "actualizacion" : "creacion";
-
+            $processes = $rule->processes()
+                ->wherePivot('active', true)
+                ->orderBy('orden')
+                ->get();
+            Log::info("processes ". $processes);
+            
+            
+            // Si no hay más procesos después del actual, marcar como completado
+            $currentIndex = $processes->search(function ($process) use ($case) {
+                return $process->id === $case->current_process_id;
+                });
+                Log::info("currentIndex " . $currentIndex);
+            # code...
             AlcoholHistory::create([
                 "case_id"    => $case->id,
                 "process_id" => $firstProcess->id,
@@ -521,6 +535,7 @@ class AlcoholProcessController extends Controller
                 "action"     => $action,
             ]);
 
+
             // 7. Verificar si el caso está activo
             if (!$case->active) {
                 DB::rollBack();
@@ -528,15 +543,7 @@ class AlcoholProcessController extends Controller
             }
 
             // 8. Obtener todos los procesos activos de la regla ordenados
-            $processes = $rule->processes()
-                ->wherePivot('active', true)
-                ->orderBy('orden')
-                ->get();
 
-            // Si no hay más procesos después del actual, marcar como completado
-            $currentIndex = $processes->search(function ($process) use ($case) {
-                return $process->id === $case->current_process_id;
-            });
 
             if ($currentIndex === false) {
                 DB::rollBack();
@@ -547,7 +554,7 @@ class AlcoholProcessController extends Controller
             if ($case->finish === true) {
                 $case->save();
                 DB::commit();
-                return ApiResponse::success($case, 'Caso ya finalizado - Registro histórico creado');
+                return ApiResponse::success($case, 'Caso ya finalizado - Registro histórico creado', 200, $errors);
             }
 
 
@@ -557,20 +564,24 @@ class AlcoholProcessController extends Controller
                 $case->finish = true;
                 $case->save();
                 DB::commit();
-                return ApiResponse::success($case, 'Caso completado (último proceso alcanzado)');
+                return ApiResponse::success($case, 'Caso completado (último proceso alcanzado)',200, $errors);
             }
 
             // 9. Preparar para el siguiente proceso (solo si NO está finish)
             $case->requires_confirmation = true;
-            $nextProcess = $processes[$currentIndex + 1];
+            $nextProcess = $processes[!empty($errors) && $currentIndex + 1 == 2 ? $currentIndex : $currentIndex + 1];
             $case->current_process_id = $nextProcess->id;
             $case->save();
 
+            Log::info("los errores aqui :", $errors);
             DB::commit();
-            return ApiResponse::success($case->load('currentProcess'), 'Caso avanzado al siguiente proceso');
+            return ApiResponse::success($case->load('currentProcess'), 'Caso avanzado al siguiente proceso', 200, $errors);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("ERROR EN advance: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+            if ($e->getMessage()== "Porfavor ingrese las imagenes que faltan nuevamente") {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
             return ApiResponse::error('Error al avanzar el caso', 500);
         }
     }

@@ -15,12 +15,13 @@ class ApiResponse
      * @param int $statusCode
      * @return JsonResponse
      */
-    public static function success($data = null, $message = 'Success', $statusCode = 200): JsonResponse
+    public static function success($data = null, $message = 'Success', $statusCode = 200,$validations=[]): JsonResponse
     {
         return response()->json([
             'status' => 'success',
             'message' => $message,
-            'data' => $data
+            'data' => $data,
+            "validations"=>$validations,
         ], $statusCode);
     }
 

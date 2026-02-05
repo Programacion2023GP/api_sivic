@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\HistoryPenalty;
 use App\Models\Penalty;
 use App\Models\PenaltyView;
+use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,16 +24,15 @@ class PenaltyController extends Controller
         try {
             $user = auth()->user();
             $userRole = $user->role;
+
             $userDependenceId = $user->dependence_id;
 
             $query = PenaltyView::query();
 
             // Aplicar filtros según el rol
-            // if ($userRole === 'director') {
-            //     $query->where('user_dependence_id', $userDependenceId);
-            // } elseif ($userRole === 'usuario') {
-            //     $query->where('created_by', $user->id)->where('active', 1);
-            // }
+           if ($userRole === 'usuario' &&  $userDependenceId == 3) {
+                $query->where('created_by', $user->id)->where('active', 1);
+            }
             // Sistemas y administrativo no necesitan filtros
 
             $penalties = $query->where("active", 1)->orderBy('id', 'desc')->get();
@@ -121,30 +121,35 @@ class PenaltyController extends Controller
         }
 
             // Procesar image_penaltie_money - CASO ESPECIAL
-            $image_penaltie_money = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
-            $images_evidences_car =  $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
-            $image_penaltie = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
-            $images_evidences = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
-            if (!empty($image_penaltie_money)) {
-                $data['image_penaltie_money'] = $image_penaltie_money;
-            }
+            // $image_penaltie_money = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
+            // $images_evidences_car =  $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
+            // $image_penaltie = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
+            // $images_evidences = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
+            // // if (!$images_evidences_car && $request->vehicle_brand) {
 
-            if (!empty($images_evidences_car)) {
-                $data['images_evidences_car'] = $images_evidences_car;
-            }
+            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // // }
+            // // if (!$image_penaltie && $request->vehicle_brand) {
 
-            if (!empty($image_penaltie)) {
-                $data['image_penaltie'] = $image_penaltie;
-            }
+            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // // }
+            // // if (!$images_evidences && $request->vehicle_brand) {
 
-            if (!empty($images_evidences)) {
-                $data['images_evidences'] = $images_evidences;
-            }
+            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // // }
+            //     $data['image_penaltie_money'] = $image_penaltie_money;
+           
+            //     $data['images_evidences_car'] = $images_evidences_car;
+           
+            //     $data['image_penaltie'] = $image_penaltie;
+           
+            //     $data['images_evidences'] = $images_evidences;
+            
 
-            Log::info("data",$request->all());
+            // Log::info("data",$request->all());
             if (!empty($data['penalties_id']) && intval($data['penalties_id']) > 0) {
             // Actualizar
-            Log::info("se esta actualizando el penaltie");
+            // Log::info("se esta actualizando el penaltie");
             unset($data['created_by']);
 
             $penaltieId = $data['penalties_id'];
@@ -164,8 +169,11 @@ class PenaltyController extends Controller
             unset($data['id']);
 
             $penalty = Penalty::create($data);
-
-            $message = 'Multa creada correctamente';
+              
+                // if (empty($data['image_penaltie_money'])) {
+                //     throw new Exception('El campo person no puede estar vacío');
+                // }
+                $message = 'Multa creada correctamente';
             $statusCode = 201;
         }
 
