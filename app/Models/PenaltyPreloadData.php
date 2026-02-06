@@ -25,6 +25,8 @@ class PenaltyPreloadData extends Model
         'final_date',
         'user_id',
         'active',
+        'person_security',
+        'vehicle_security',
         'created_at',
         'updated_at',
     ];

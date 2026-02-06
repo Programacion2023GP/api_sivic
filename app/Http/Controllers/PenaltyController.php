@@ -121,29 +121,29 @@ class PenaltyController extends Controller
         }
 
             // Procesar image_penaltie_money - CASO ESPECIAL
-            // $image_penaltie_money = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
-            // $images_evidences_car =  $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
-            // $image_penaltie = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
-            // $images_evidences = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
-            // // if (!$images_evidences_car && $request->vehicle_brand) {
+            $image_penaltie_money = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
+            $images_evidences_car =  $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
+            $image_penaltie = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
+            $images_evidences = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
+            // if (!$images_evidences_car && $request->vehicle_brand) {
 
-            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // // }
-            // // if (!$image_penaltie && $request->vehicle_brand) {
+            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // }
+            // if (!$image_penaltie && $request->vehicle_brand) {
 
-            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // // }
-            // // if (!$images_evidences && $request->vehicle_brand) {
+            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // }
+            // if (!$images_evidences && $request->vehicle_brand) {
 
-            // //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // // }
-            //     $data['image_penaltie_money'] = $image_penaltie_money;
+            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
+            // }
+                $data['image_penaltie_money'] = $image_penaltie_money;
            
-            //     $data['images_evidences_car'] = $images_evidences_car;
+                $data['images_evidences_car'] = $images_evidences_car;
            
-            //     $data['image_penaltie'] = $image_penaltie;
+                $data['image_penaltie'] = $image_penaltie;
            
-            //     $data['images_evidences'] = $images_evidences;
+                $data['images_evidences'] = $images_evidences;
             
 
             // Log::info("data",$request->all());

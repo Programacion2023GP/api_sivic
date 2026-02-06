@@ -17,6 +17,7 @@ class Penalty extends Model
         'image_penaltie_money',
         'exit_reason',
         'fine_amount',
+       
         // 'person_contraloria',
         // 'oficial_payroll',
         // 'person_oficial',
