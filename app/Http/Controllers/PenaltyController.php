@@ -137,13 +137,25 @@ class PenaltyController extends Controller
 
             //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
             // }
+            if (!isset($data['image_penaltie_money'])) {
+                
                 $data['image_penaltie_money'] = $image_penaltie_money;
-           
+            }
+            if (!isset($data['images_evidences_car'])) {
+
                 $data['images_evidences_car'] = $images_evidences_car;
-           
+            }
+            if (!isset($data['image_penaltie'])) {
+                
                 $data['image_penaltie'] = $image_penaltie;
-           
+            }
+            if (!isset($data['images_evidences'])) {
                 $data['images_evidences'] = $images_evidences;
+
+            }
+           
+           
+           
             
 
             // Log::info("data",$request->all());
