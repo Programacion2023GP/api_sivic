@@ -101,229 +101,212 @@ class PenaltyController extends Controller
      * Crear o actualizar una multa.
      * Si se recibe un 'id', actualiza; si no, crea una nueva.
      */
-  public function storeOrUpdate(Request $request)
-{
-    try {
-        $data = $request->all();
+    public function storeOrUpdate(Request $request)
+    {
+        try {
+            $data = $request->all();
+
+            // ---- Procesar PenaltyPreloadData ----
             $penaltyPreloadDataController = new PenaltyPreloadDataController();
             $penaltyPreloadData = $penaltyPreloadDataController->storeOrUpdate($request);
             $data["penalty_preload_data_id"] = $penaltyPreloadData->id;
-        // Convert boolean strings to actual booleans/integers
-        $data = $this->convertBooleanStrings($data);
 
-        // Normalizar fecha si viene en formato dd/mm/yyyy
-        if (isset($data['date'])) {
-            $parts = explode('/', $data['date']);
-            if (count($parts) === 3) {
-                // dd/mm/yyyy => yyyy-mm-dd
-                $data['date'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            // Convertir boolean strings
+            $data = $this->convertBooleanStrings($data);
+
+            // Normalizar fecha
+            if (isset($data['date'])) {
+                $parts = explode('/', $data['date']);
+                if (count($parts) === 3) {
+                    $data['date'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+                }
             }
-        }
 
-            // Procesar image_penaltie_money - CASO ESPECIAL
-            $image_penaltie_money = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
-            $images_evidences_car =  $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
-            $image_penaltie = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
-            $images_evidences = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
-            // if (!$images_evidences_car && $request->vehicle_brand) {
+            // ---- Verificar si es actualización ----
+            $isUpdate = !empty($data['penalties_id']) && intval($data['penalties_id']) > 0;
 
-            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // }
-            // if (!$image_penaltie && $request->vehicle_brand) {
-
-            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // }
-            // if (!$images_evidences && $request->vehicle_brand) {
-
-            //     throw new Exception("Alguna imagen fallo por favor vuelva a intentarlo");
-            // }
-            if (!isset($data['image_penaltie_money'])) {
-                
-                $data['image_penaltie_money'] = $image_penaltie_money;
+            // Si es actualización, obtener el registro existente
+            if ($isUpdate) {
+                $penalty = Penalty::findOrFail($data['penalties_id']);
             }
-            if (!isset($data['images_evidences_car'])) {
 
-                $data['images_evidences_car'] = $images_evidences_car;
+            // ---- Procesar imágenes (solo si hay archivo nuevo) ----
+
+            // 1. image_penaltie_money
+            if ($request->hasFile('image_penaltie_money') && $request->file('image_penaltie_money')->isValid()) {
+                $data['image_penaltie_money'] = $this->handleImageUpload($request, $data, 'image_penaltie_money', 'cash');
+            } elseif ($isUpdate && isset($penalty->image_penaltie_money)) {
+                // Conservar la existente
+                $data['image_penaltie_money'] = $penalty->image_penaltie_money;
             }
-            if (!isset($data['image_penaltie'])) {
-                
-                $data['image_penaltie'] = $image_penaltie;
+
+            // 2. images_evidences_car
+            if ($request->hasFile('images_evidences_car') && $request->file('images_evidences_car')->isValid()) {
+                $data['images_evidences_car'] = $this->handleImageUpload($request, $data, 'images_evidences_car', 'evidences', "car_{$request->curp}");
+            } elseif ($isUpdate && isset($penalty->images_evidences_car)) {
+                $data['images_evidences_car'] = $penalty->images_evidences_car;
             }
-            if (!isset($data['images_evidences'])) {
-                $data['images_evidences'] = $images_evidences;
 
+            // 3. image_penaltie
+            if ($request->hasFile('image_penaltie') && $request->file('image_penaltie')->isValid()) {
+                $data['image_penaltie'] = $this->handleImageUpload($request, $data, 'image_penaltie', 'multas');
+            } elseif ($isUpdate && isset($penalty->image_penaltie)) {
+                $data['image_penaltie'] = $penalty->image_penaltie;
             }
-           
-           
-           
-            
 
-            // Log::info("data",$request->all());
-            if (!empty($data['penalties_id']) && intval($data['penalties_id']) > 0) {
-            // Actualizar
-            // Log::info("se esta actualizando el penaltie");
-            unset($data['created_by']);
+            // 4. images_evidences
+            if ($request->hasFile('images_evidences') && $request->file('images_evidences')->isValid()) {
+                $data['images_evidences'] = $this->handleImageUpload($request, $data, 'images_evidences', 'evidences');
+            } elseif ($isUpdate && isset($penalty->images_evidences)) {
+                $data['images_evidences'] = $penalty->images_evidences;
+            }
 
-            $penaltieId = $data['penalties_id'];
-            unset($data['penalties_id']);
+            // ---- Crear o actualizar ----
+            if ($isUpdate) {
+                // Actualizar
+                unset($data['created_by']);
+                $penaltieId = $data['penalties_id'];
+                unset($data['penalties_id']);
 
-            $penalty = Penalty::findOrFail($penaltieId);
-            $penalty->update($data);
-
-            $message = 'Multa actualizada correctamente';
-            $statusCode = 200;
-        } else {
-                Log::info("se esta creando el penaltie");
-
+                $penalty->update($data);
+                $message = 'Multa actualizada correctamente';
+                $statusCode = 200;
+            } else {
                 // Crear nueva
                 $data['created_by'] = Auth::id();
-            unset($data['penalties_id']);
-            unset($data['id']);
+                unset($data['penalties_id']);
+                unset($data['id']);
 
-            $penalty = Penalty::create($data);
-              
-                // if (empty($data['image_penaltie_money'])) {
-                //     throw new Exception('El campo person no puede estar vacío');
-                // }
+                $penalty = Penalty::create($data);
                 $message = 'Multa creada correctamente';
-            $statusCode = 201;
+                $statusCode = 201;
+            }
+
+            // ✅ Devolver el modelo
+            return $penalty;
+        } catch (\Exception $e) {
+            \Log::error('❌ Error en storeOrUpdate: ' . $e->getMessage());
+            throw $e;
         }
-
-
-        return $penalty;
-    } catch (\Exception $e) {
-       throw $e;
     }
-}
+    /**
+     * 🔧 Procesa la subida de una imagen (soporta multipart y JSON serializado)
+     * 
+     * @param Request $request
+     * @param array &$data       (por referencia para modificar)
+     * @param string $fieldName  Nombre del campo (ej: 'image_penaltie')
+     * @param string $subdirectory Subcarpeta dentro de presidencia/SIVIC (ej: 'multas')
+     * @param string|null $customFilename Prefijo personalizado (ej: 'car_')
+     * @return string|null       URL pública de la imagen o null
+     */
     private function handleImageUpload(Request $request, array &$data, string $fieldName, string $subdirectory, ?string $customFilename = null)
     {
         $url = null;
-        // VERIFICAR SI EL CAMPO CURP EXISTE
-        if (!$request->has('curp') && empty($request->curp)) {
 
-            // Intentar obtener curp de $data si no está en request
-            $curp = $data['curp'] ?? $request->input('curp') ?? 'SIN_CURP';
-        } else {
-            $curp = $request->curp ?? $request->input('curp');
-        }
+        // Obtener CURP (desde request o desde data)
+        $curp = $request->curp ?? $request->input('curp') ?? $data['curp'] ?? 'SIN_CURP';
 
-        $filename = $customFilename ?? $curp;
-        $baseUrl = "https://api.gpcenter.gomezpalacio.gob.mx/";
+        // Prefijo para el nombre del archivo
+        $baseName = $customFilename ?? $curp;
+
+        // Ruta base local
         $basePath = "presidencia/SIVIC/";
+        $dirPath = rtrim($basePath . $subdirectory, '/');
 
-     
-
-        // Debug mejorado
-        $fileInfo = [
-            'hasFile' => $request->hasFile($fieldName) ? 'SÍ' : 'NO',
-            'existsInData' => isset($data[$fieldName]) ? 'SÍ' : 'NO'
-        ];
-
-        if ($request->hasFile($fieldName)) {
-            $fileInfo['isValid'] = $request->file($fieldName)->isValid() ? 'SÍ' : 'NO';
-            $fileInfo['type'] = get_class($request->file($fieldName));
-        }
-
-
-        // **CASO 1: Archivo normal (multipart/form-data)**
+        // ===== CASO 1: Archivo enviado por multipart/form-data =====
         if ($request->hasFile($fieldName) && $request->file($fieldName)->isValid()) {
-
             try {
                 $file = $request->file($fieldName);
-                $dirPath = rtrim($basePath . $subdirectory, '/');
 
-               
+                // Subir localmente y obtener nombre del archivo
+                $filename = $this->ImgUpload($file, $curp, $dirPath, $baseName);
 
-                $imagePath = $this->ImgUpload($file, $curp, $dirPath, $filename);
-
-                if ($imagePath) {
-                    // Construir URL sin doble barra
-                    $url = $baseUrl . $dirPath . "/" . $curp . "/" . $imagePath;
+                if ($filename) {
+                    // Construir URL pública usando el helper asset() de Laravel
+                    $url = asset("storage/{$dirPath}/{$curp}/{$filename}");
                     $data[$fieldName] = $url;
-
-                    // IMPORTANTE: Eliminar el archivo temporal del array $data
-                    if (isset($data[$fieldName]) && is_array($data[$fieldName])) {
-                        unset($data[$fieldName]);
-                    }
-
+                    \Log::info("📸 Imagen {$fieldName} guardada en: {$url}");
                 } else {
                     unset($data[$fieldName]);
                 }
                 return $url;
             } catch (\Exception $e) {
+                \Log::error("❌ Error al subir {$fieldName}: " . $e->getMessage());
                 unset($data[$fieldName]);
+                return null;
             }
         }
-        // **CASO 2: Archivo serializado en JSON (OBJETO)**
+
+        // ===== CASO 2: Archivo serializado en JSON (objeto o array) =====
         elseif (isset($data[$fieldName]) && (is_array($data[$fieldName]) || is_object($data[$fieldName]))) {
-
             try {
-                // Convertir a array si es objeto
                 $fileData = (array) $data[$fieldName];
-
-                // Buscar la clave con la ruta temporal (puede tener backslashes)
                 $tempFilePath = null;
+
+                // Buscar la clave que contiene la ruta temporal
                 foreach ($fileData as $key => $value) {
-                    if (is_string($value) && (strpos($key, 'UploadedFile') !== false || strpos($value, 'Temp') !== false)) {
+                    if (is_string($value) && (strpos($value, 'Temp') !== false || strpos($value, 'tmp') !== false)) {
                         $tempFilePath = $value;
                         break;
                     }
                 }
 
                 if ($tempFilePath && file_exists($tempFilePath)) {
-                   
+                    // Crear objeto UploadedFile desde la ruta temporal
                     $file = new \Illuminate\Http\UploadedFile(
                         $tempFilePath,
                         basename($tempFilePath),
-                        @mime_content_type($tempFilePath),
+                        mime_content_type($tempFilePath) ?: 'application/octet-stream',
                         filesize($tempFilePath),
                         0,
                         true
                     );
 
-                    $dirPath = rtrim($basePath . $subdirectory, '/');
-                    $imagePath = $this->ImgUpload($file, $curp, $dirPath, $filename);
+                    $filename = $this->ImgUpload($file, $curp, $dirPath, $baseName);
 
-                    if ($imagePath) {
-                        $url = $baseUrl . $dirPath . "/" . $curp . "/" . $imagePath;
+                    if ($filename) {
+                        $url = asset("storage/{$dirPath}/{$curp}/{$filename}");
                         $data[$fieldName] = $url;
+                        \Log::info("📸 Imagen {$fieldName} (JSON) guardada en: {$url}");
                     } else {
                         unset($data[$fieldName]);
                     }
                 } else {
-                  
+                    // No se encontró archivo temporal, limpiar
                     unset($data[$fieldName]);
                 }
+                return $url;
             } catch (\Exception $e) {
+                \Log::error("❌ Error al procesar {$fieldName} desde JSON: " . $e->getMessage());
                 unset($data[$fieldName]);
+                return null;
             }
         }
-        // **CASO 3: Limpieza de datos inválidos**
-        else {
 
+        // ===== CASO 3: Datos inválidos o ya procesados =====
+        else {
             if (isset($data[$fieldName])) {
                 $value = $data[$fieldName];
 
-                // Si es string con ruta temporal
-                if (is_string($value) && (str_contains($value, 'Temp\\php') || str_contains($value, 'Temp/php'))) {
+                // Si es una ruta temporal, eliminar
+                if (is_string($value) && (str_contains($value, 'Temp') || str_contains($value, 'tmp'))) {
                     unset($data[$fieldName]);
                 }
-                // Si es array/objeto vacío
+                // Si es un array/objeto vacío, eliminar
                 elseif (is_array($value) && empty($value)) {
                     unset($data[$fieldName]);
                 }
-                // Si ya es una URL válida, mantenerla
+                // Si ya es una URL válida (del mismo servidor), mantenerla
                 elseif (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+                    // Ya es URL, no hacemos nada
                 }
-                // Otros casos
+                // Otros casos: eliminar
                 else {
-                  
                     unset($data[$fieldName]);
                 }
-            } else {
             }
+            return null;
         }
-
     }
 
     /**

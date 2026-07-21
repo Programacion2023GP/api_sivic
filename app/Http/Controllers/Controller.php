@@ -4,22 +4,51 @@ namespace App\Http\Controllers;
 
 abstract class Controller
 {
-    public function ImgUpload($image, $destination, $dir, $imgName)
+    /**
+     * 📤 Subir imagen al servidor local (storage/app/public)
+     * 
+     * @param \Illuminate\Http\UploadedFile $image
+     * @param string $curp
+     * @param string $dirPath   Ej: "presidencia/SIVIC/multas"
+     * @param string $imgName   Ej: "CURP123" o "car_CURP123"
+     * @return string|null      Nombre del archivo guardado o null en error
+     */
+    public function ImgUpload($image, $curp, $dirPath, $imgName)
     {
-        // Verificar que la imagen sea v├ílida
-        if (!$image || !$image->isValid()) {
-            throw new \Exception('La imagen no es v├ílida');
+        try {
+            // Validar imagen
+            if (!$image || !$image->isValid()) {
+                \Log::error('❌ ImgUpload: Imagen inválida');
+                return null;
+            }
+
+            // Generar nombre único
+            $extension = $image->getClientOriginalExtension();
+            $filename = $imgName . '_' . time() . '.' . $extension;
+
+            // Construir ruta relativa dentro de storage/app/public
+            $relativePath = $dirPath . '/' . $curp;
+
+            // Guardar en disco 'public'
+            $storedPath = $image->storeAs(
+                $relativePath,
+                $filename,
+                'public'
+            );
+
+            if (!$storedPath) {
+                \Log::error('❌ ImgUpload: Fallo al guardar archivo');
+                return null;
+            }
+
+            \Log::info("✅ Imagen guardada localmente: {$storedPath}");
+
+            // Retornar solo el nombre del archivo (para construir URL después)
+            return $filename;
+        } catch (\Exception $e) {
+            \Log::error('❌ ImgUpload Exception: ' . $e->getMessage());
+            return null;
         }
-
-        // Generar nombre ├║nico para el archivo
-        $extension = $image->getClientOriginalExtension();
-        $filename = $imgName . '_' . time() . '.' . $extension;
-
-        // Subir al microservicio con los par├ímetros espec├¡ficos
-        $imageUrl = $this->uploadToMicroservice($image, $destination, $dir, $filename);
-
-        // Devolver la URL completa para la BD
-        return $filename;
     }
 
     /**

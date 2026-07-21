@@ -226,7 +226,7 @@ class AlcoholProcessController extends Controller
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponse::error('Error al crear el caso', 500);
+            return ApiResponse::error($e->getMessage());
         }
     }
 
