@@ -30,7 +30,7 @@ class PenaltyController extends Controller
             $query = PenaltyView::query();
 
             // Aplicar filtros según el rol
-           if ($userRole === 'usuario' &&  $userDependenceId == 3) {
+           if ($userRole === 'usuario' ) {
                 $query->where('created_by', $user->id)->where('active', 1);
             }
             // Sistemas y administrativo no necesitan filtros
